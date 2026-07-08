@@ -18,6 +18,7 @@ namespace RimSynapse.NvidiaTool
     ///   Advanced → + Model, tokens/s, API calls, throttle
     ///   Developer → + GPU temp, power, clocks, fan, utilization
     /// </summary>
+    [StaticConstructorOnStartup]
     public static class OverlayHud
     {
         // ── Display state ──

@@ -114,6 +114,7 @@ namespace RimSynapse.NvidiaTool
     /// Adds our GPU toggle icon to the toolbar row.
     /// </summary>
     [HarmonyPatch(typeof(PlaySettings), nameof(PlaySettings.DoPlaySettingsGlobalControls))]
+    [StaticConstructorOnStartup]
     internal static class PlaySettingsPatch
     {
         [HarmonyPostfix]
