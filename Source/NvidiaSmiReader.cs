@@ -1,20 +1,20 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Globalization;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 
 namespace RimSynapse.NvidiaTool
 {
     /// <summary>
-    /// Polls nvidia-smi on a background thread to read GPU stats.
-    /// Targets NVIDIA 4000/5000 series (RTX 40xx, RTX 50xx).
-    /// nvidia-smi ships with every NVIDIA driver — no extra install needed.
+    /// Reads GPU stats via NVML (NVIDIA Management Library) P/Invoke.
+    /// 
+    /// NVML ships with every NVIDIA driver as nvml.dll in System32.
+    /// This approach calls native functions directly — no process spawning,
+    /// no shell commands, fully Steam Workshop safe.
     ///
-    /// Queries:
-    ///   GPU name, utilization, VRAM used/total, temperature, power draw/limit,
-    ///   fan speed, clock speeds, driver version, per-process VRAM.
+    /// Targets NVIDIA 4000/5000 series (RTX 40xx, RTX 50xx).
     /// </summary>
     internal static class NvidiaSmiReader
     {
@@ -22,6 +22,7 @@ namespace RimSynapse.NvidiaTool
         private static volatile bool _shutdown;
         private static volatile bool _available;
         private static readonly object _lock = new object();
+        private static IntPtr _device = IntPtr.Zero;
 
         /// <summary>Interval between polls in milliseconds.</summary>
         private const int PollIntervalMs = 3000;
@@ -55,12 +56,12 @@ namespace RimSynapse.NvidiaTool
             _pollThread = new Thread(PollLoop)
             {
                 IsBackground = true,
-                Name = "RimSynapse-NvidiaSmi",
+                Name = "RimSynapse-NVML",
             };
             _pollThread.Start();
         }
 
-        /// <summary>Stop background polling.</summary>
+        /// <summary>Stop background polling and shutdown NVML.</summary>
         internal static void Shutdown()
         {
             _shutdown = true;
@@ -68,17 +69,15 @@ namespace RimSynapse.NvidiaTool
 
         private static void PollLoop()
         {
-            // Initial check — is nvidia-smi available?
-            if (!TestNvidiaSmi())
+            // Initialize NVML
+            if (!InitNvml())
             {
                 _available = false;
-                LastError = "nvidia-smi not found. Ensure NVIDIA drivers are installed.";
-                Verse.Log.Warning($"[RimSynapse NV] {LastError}");
                 return;
             }
 
             _available = true;
-            Verse.Log.Message($"[RimSynapse NV] nvidia-smi detected. GPU: {GpuName}, Driver: {DriverVersion}");
+            Verse.Log.Message($"[RimSynapse NV] NVML initialized. GPU: {GpuName}, Driver: {DriverVersion}");
 
             while (!_shutdown)
             {
@@ -91,118 +90,225 @@ namespace RimSynapse.NvidiaTool
                 catch (Exception ex)
                 {
                     LastError = ex.Message;
-                    Verse.Log.Message($"[RimSynapse NV] nvidia-smi poll error: {ex.Message}");
                 }
 
                 Thread.Sleep(PollIntervalMs);
             }
+
+            // Cleanup
+            try { Nvml.Shutdown(); } catch { }
         }
 
-        /// <summary>
-        /// Test whether nvidia-smi is available and grab static info.
-        /// </summary>
-        private static bool TestNvidiaSmi()
+        // ────────────────────────────────────────────────────────
+        //  Initialization
+        // ────────────────────────────────────────────────────────
+
+        private static bool InitNvml()
         {
             try
             {
-                string output = RunNvidiaSmi(
-                    "--query-gpu=name,driver_version --format=csv,noheader,nounits");
-
-                if (string.IsNullOrEmpty(output))
-                    return false;
-
-                // Output: "NVIDIA GeForce RTX 5090, 572.83"
-                var parts = output.Trim().Split(',');
-                if (parts.Length >= 2)
+                int result = Nvml.Init();
+                if (result != Nvml.SUCCESS)
                 {
-                    GpuName = parts[0].Trim();
-                    DriverVersion = parts[1].Trim();
+                    LastError = $"NVML init failed (code {result}).";
+                    Verse.Log.Warning($"[RimSynapse NV] {LastError}");
+                    return false;
                 }
+
+                // Get first GPU device
+                result = Nvml.DeviceGetHandleByIndex(0, out _device);
+                if (result != Nvml.SUCCESS || _device == IntPtr.Zero)
+                {
+                    LastError = $"No NVIDIA GPU found (code {result}).";
+                    Verse.Log.Warning($"[RimSynapse NV] {LastError}");
+                    Nvml.Shutdown();
+                    return false;
+                }
+
+                // Read static info
+                var nameBuf = new StringBuilder(256);
+                if (Nvml.DeviceGetName(_device, nameBuf, 256) == Nvml.SUCCESS)
+                    GpuName = nameBuf.ToString();
+
+                var driverBuf = new StringBuilder(256);
+                if (Nvml.SystemGetDriverVersion(driverBuf, 256) == Nvml.SUCCESS)
+                    DriverVersion = driverBuf.ToString();
 
                 return true;
             }
-            catch
+            catch (DllNotFoundException)
             {
+                LastError = "nvml.dll not found. NVIDIA drivers may not be installed.";
+                Verse.Log.Warning($"[RimSynapse NV] {LastError}");
+                return false;
+            }
+            catch (Exception ex)
+            {
+                LastError = $"NVML init error: {ex.Message}";
+                Verse.Log.Warning($"[RimSynapse NV] {LastError}");
                 return false;
             }
         }
 
-        /// <summary>
-        /// Poll core GPU metrics via nvidia-smi CSV output.
-        /// </summary>
+        // ────────────────────────────────────────────────────────
+        //  Polling
+        // ────────────────────────────────────────────────────────
+
         private static void PollGpuStats()
         {
-            string output = RunNvidiaSmi(
-                "--query-gpu=" +
-                "utilization.gpu," +
-                "memory.used," +
-                "memory.total," +
-                "temperature.gpu," +
-                "power.draw," +
-                "power.limit," +
-                "fan.speed," +
-                "clocks.current.graphics," +
-                "clocks.current.memory" +
-                " --format=csv,noheader,nounits");
+            if (_device == IntPtr.Zero) return;
 
-            if (string.IsNullOrEmpty(output))
-                return;
-
-            // Output: "85, 11234, 24576, 72, 320.45, 450.00, 55, 2520, 10501"
-            var parts = output.Trim().Split(',');
-            if (parts.Length >= 9)
+            // Utilization
+            var util = new Nvml.Utilization();
+            if (Nvml.DeviceGetUtilizationRates(_device, ref util) == Nvml.SUCCESS)
             {
                 lock (_lock)
                 {
-                    UtilizationPercent = ParseInt(parts[0]);
-                    UsedVramMb = ParseFloat(parts[1]);
-                    TotalVramMb = ParseFloat(parts[2]);
-                    TemperatureC = ParseInt(parts[3]);
-                    PowerDrawW = ParseFloat(parts[4]);
-                    PowerLimitW = ParseFloat(parts[5]);
-                    FanSpeedPercent = ParseInt(parts[6]);
-                    GpuClockMhz = ParseInt(parts[7]);
-                    MemClockMhz = ParseInt(parts[8]);
-                    LastUpdated = DateTime.UtcNow;
-                    LastError = null;
+                    UtilizationPercent = (int)util.gpu;
                 }
             }
-        }
 
-        /// <summary>
-        /// Poll per-process VRAM usage (identifies LM Studio, RimWorld, etc.).
-        /// </summary>
-        private static void PollProcesses()
-        {
-            string output = RunNvidiaSmi(
-                "--query-compute-apps=pid,name,used_memory " +
-                "--format=csv,noheader,nounits");
-
-            var newProcesses = new List<GpuProcessInfo>();
-
-            if (!string.IsNullOrEmpty(output))
+            // Memory
+            var mem = new Nvml.Memory();
+            if (Nvml.DeviceGetMemoryInfo(_device, ref mem) == Nvml.SUCCESS)
             {
-                var lines = output.Split(new[] { '\r', '\n' },
-                    StringSplitOptions.RemoveEmptyEntries);
-
-                foreach (var line in lines)
+                lock (_lock)
                 {
-                    var parts = line.Split(',');
-                    if (parts.Length >= 3)
-                    {
-                        newProcesses.Add(new GpuProcessInfo
-                        {
-                            Pid = ParseInt(parts[0]),
-                            Name = parts[1].Trim(),
-                            VramMb = ParseFloat(parts[2]),
-                        });
-                    }
+                    UsedVramMb = mem.used / (1024f * 1024f);
+                    TotalVramMb = mem.total / (1024f * 1024f);
                 }
+            }
+
+            // Temperature
+            uint temp;
+            if (Nvml.DeviceGetTemperature(_device, Nvml.TEMPERATURE_GPU, out temp) == Nvml.SUCCESS)
+            {
+                lock (_lock) { TemperatureC = (int)temp; }
+            }
+
+            // Power
+            uint powerMw, limitMw;
+            if (Nvml.DeviceGetPowerUsage(_device, out powerMw) == Nvml.SUCCESS)
+            {
+                lock (_lock) { PowerDrawW = powerMw / 1000f; }
+            }
+            if (Nvml.DeviceGetEnforcedPowerLimit(_device, out limitMw) == Nvml.SUCCESS)
+            {
+                lock (_lock) { PowerLimitW = limitMw / 1000f; }
+            }
+
+            // Fan speed
+            uint fan;
+            if (Nvml.DeviceGetFanSpeed(_device, out fan) == Nvml.SUCCESS)
+            {
+                lock (_lock) { FanSpeedPercent = (int)fan; }
+            }
+
+            // Clocks
+            uint gpuClock, memClock;
+            if (Nvml.DeviceGetClockInfo(_device, Nvml.CLOCK_GRAPHICS, out gpuClock) == Nvml.SUCCESS)
+            {
+                lock (_lock) { GpuClockMhz = (int)gpuClock; }
+            }
+            if (Nvml.DeviceGetClockInfo(_device, Nvml.CLOCK_MEM, out memClock) == Nvml.SUCCESS)
+            {
+                lock (_lock) { MemClockMhz = (int)memClock; }
             }
 
             lock (_lock)
             {
+                LastUpdated = DateTime.UtcNow;
+                LastError = null;
+            }
+        }
+
+        /// <summary>
+        /// Poll per-process VRAM usage via NVML.
+        /// Queries both compute (CUDA/LLM) and graphics (rendering/Unity) processes.
+        /// </summary>
+        private static void PollProcesses()
+        {
+            if (_device == IntPtr.Zero) return;
+
+            var newProcesses = new List<GpuProcessInfo>();
+            var seenPids = new HashSet<int>();
+
+            // Compute processes (LM Studio / CUDA workloads)
+            CollectProcesses(true, newProcesses, seenPids);
+
+            // Graphics processes (RimWorld / Unity rendering)
+            CollectProcesses(false, newProcesses, seenPids);
+
+            lock (_lock)
+            {
                 Processes = newProcesses;
+            }
+        }
+
+        private static void CollectProcesses(bool compute,
+            List<GpuProcessInfo> list, HashSet<int> seenPids)
+        {
+            try
+            {
+                // First call: get count
+                uint count = 0;
+                int result;
+
+                if (compute)
+                    result = Nvml.DeviceGetComputeRunningProcesses(_device, ref count, null);
+                else
+                    result = Nvml.DeviceGetGraphicsRunningProcesses(_device, ref count, null);
+
+                // INSUFFICIENT_SIZE means count was set to the required size
+                if (result != Nvml.SUCCESS && result != Nvml.ERROR_INSUFFICIENT_SIZE)
+                    return;
+                if (count == 0) return;
+
+                // Second call: get data
+                var infos = new Nvml.ProcessInfo[count];
+                if (compute)
+                    result = Nvml.DeviceGetComputeRunningProcesses(_device, ref count, infos);
+                else
+                    result = Nvml.DeviceGetGraphicsRunningProcesses(_device, ref count, infos);
+
+                if (result != Nvml.SUCCESS) return;
+
+                for (int i = 0; i < count; i++)
+                {
+                    int pid = (int)infos[i].pid;
+                    if (pid <= 0 || seenPids.Contains(pid)) continue;
+                    seenPids.Add(pid);
+
+                    // Resolve process name from PID (safe .NET API, no process spawning)
+                    string procName = ResolveProcessName(pid);
+
+                    list.Add(new GpuProcessInfo
+                    {
+                        Pid = pid,
+                        Name = procName,
+                        VramMb = infos[i].usedGpuMemory / (1024f * 1024f),
+                    });
+                }
+            }
+            catch { /* Process enumeration can fail on permission issues — skip */ }
+        }
+
+        /// <summary>
+        /// Resolve a PID to a process name using .NET's Process API.
+        /// Safe, no external process spawning.
+        /// </summary>
+        private static string ResolveProcessName(int pid)
+        {
+            try
+            {
+                using (var proc = Process.GetProcessById(pid))
+                {
+                    return proc.ProcessName;
+                }
+            }
+            catch
+            {
+                return $"PID {pid}";
             }
         }
 
@@ -222,7 +328,6 @@ namespace RimSynapse.NvidiaTool
                 gpu.totalVramGb = TotalVramMb / 1024f;
                 gpu.lastUpdated = LastUpdated;
 
-                // Update per-process list
                 gpu.processes.Clear();
                 foreach (var p in Processes)
                 {
@@ -235,60 +340,106 @@ namespace RimSynapse.NvidiaTool
                 }
             }
         }
+    }
 
-        /// <summary>
-        /// Run nvidia-smi with arguments and capture stdout.
-        /// </summary>
-        private static string RunNvidiaSmi(string arguments)
+    // ────────────────────────────────────────────────────────
+    //  NVML P/Invoke bindings
+    // ────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Native P/Invoke declarations for NVML (nvml.dll).
+    /// nvml.dll ships with every NVIDIA driver in System32.
+    /// </summary>
+    internal static class Nvml
+    {
+        internal const int SUCCESS = 0;
+        internal const int ERROR_INSUFFICIENT_SIZE = 7;
+        internal const int TEMPERATURE_GPU = 0;
+        internal const int CLOCK_GRAPHICS = 0;
+        internal const int CLOCK_SM = 1;
+        internal const int CLOCK_MEM = 2;
+
+        [StructLayout(LayoutKind.Sequential)]
+        internal struct Utilization
         {
-            var psi = new ProcessStartInfo
-            {
-                FileName = "nvidia-smi",
-                Arguments = arguments,
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                CreateNoWindow = true,
-                StandardOutputEncoding = Encoding.UTF8,
-            };
-
-            using (var process = Process.Start(psi))
-            {
-                if (process == null) return null;
-
-                string output = process.StandardOutput.ReadToEnd();
-                process.WaitForExit(5000); // 5 second timeout
-
-                if (process.ExitCode != 0)
-                    return null;
-
-                return output;
-            }
+            public uint gpu;    // % utilization
+            public uint memory; // % utilization
         }
 
-        // ── Parse helpers (tolerant of whitespace / [N/A] values) ──
-
-        private static int ParseInt(string s)
+        [StructLayout(LayoutKind.Sequential)]
+        internal struct Memory
         {
-            s = s?.Trim();
-            if (string.IsNullOrEmpty(s) || s.Contains("N/A"))
-                return 0;
-            return int.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture,
-                out int v) ? v : 0;
+            public ulong total; // bytes
+            public ulong free;  // bytes
+            public ulong used;  // bytes
         }
 
-        private static float ParseFloat(string s)
+        [StructLayout(LayoutKind.Sequential)]
+        internal struct ProcessInfo
         {
-            s = s?.Trim();
-            if (string.IsNullOrEmpty(s) || s.Contains("N/A"))
-                return 0f;
-            return float.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture,
-                out float v) ? v : 0f;
+            public uint pid;
+            public ulong usedGpuMemory; // bytes
+            public uint gpuInstanceId;
+            public uint computeInstanceId;
         }
+
+        // ── Init / Shutdown ──
+
+        [DllImport("nvml", EntryPoint = "nvmlInit_v2", CallingConvention = CallingConvention.Cdecl)]
+        internal static extern int Init();
+
+        [DllImport("nvml", EntryPoint = "nvmlShutdown", CallingConvention = CallingConvention.Cdecl)]
+        internal static extern int Shutdown();
+
+        // ── Device ──
+
+        [DllImport("nvml", EntryPoint = "nvmlDeviceGetHandleByIndex_v2", CallingConvention = CallingConvention.Cdecl)]
+        internal static extern int DeviceGetHandleByIndex(uint index, out IntPtr device);
+
+        [DllImport("nvml", EntryPoint = "nvmlDeviceGetName", CallingConvention = CallingConvention.Cdecl)]
+        internal static extern int DeviceGetName(IntPtr device, StringBuilder name, uint length);
+
+        [DllImport("nvml", EntryPoint = "nvmlSystemGetDriverVersion", CallingConvention = CallingConvention.Cdecl)]
+        internal static extern int SystemGetDriverVersion(StringBuilder version, uint length);
+
+        // ── Stats ──
+
+        [DllImport("nvml", EntryPoint = "nvmlDeviceGetUtilizationRates", CallingConvention = CallingConvention.Cdecl)]
+        internal static extern int DeviceGetUtilizationRates(IntPtr device, ref Utilization utilization);
+
+        [DllImport("nvml", EntryPoint = "nvmlDeviceGetMemoryInfo", CallingConvention = CallingConvention.Cdecl)]
+        internal static extern int DeviceGetMemoryInfo(IntPtr device, ref Memory memory);
+
+        [DllImport("nvml", EntryPoint = "nvmlDeviceGetTemperature", CallingConvention = CallingConvention.Cdecl)]
+        internal static extern int DeviceGetTemperature(IntPtr device, int sensorType, out uint temp);
+
+        [DllImport("nvml", EntryPoint = "nvmlDeviceGetPowerUsage", CallingConvention = CallingConvention.Cdecl)]
+        internal static extern int DeviceGetPowerUsage(IntPtr device, out uint power);
+
+        [DllImport("nvml", EntryPoint = "nvmlDeviceGetEnforcedPowerLimit", CallingConvention = CallingConvention.Cdecl)]
+        internal static extern int DeviceGetEnforcedPowerLimit(IntPtr device, out uint limit);
+
+        [DllImport("nvml", EntryPoint = "nvmlDeviceGetFanSpeed", CallingConvention = CallingConvention.Cdecl)]
+        internal static extern int DeviceGetFanSpeed(IntPtr device, out uint speed);
+
+        [DllImport("nvml", EntryPoint = "nvmlDeviceGetClockInfo", CallingConvention = CallingConvention.Cdecl)]
+        internal static extern int DeviceGetClockInfo(IntPtr device, int clockType, out uint clock);
+
+        // ── Processes ──
+
+        [DllImport("nvml", EntryPoint = "nvmlDeviceGetComputeRunningProcesses_v3", CallingConvention = CallingConvention.Cdecl)]
+        internal static extern int DeviceGetComputeRunningProcesses(
+            IntPtr device, ref uint infoCount,
+            [In, Out] ProcessInfo[] infos);
+
+        [DllImport("nvml", EntryPoint = "nvmlDeviceGetGraphicsRunningProcesses_v3", CallingConvention = CallingConvention.Cdecl)]
+        internal static extern int DeviceGetGraphicsRunningProcesses(
+            IntPtr device, ref uint infoCount,
+            [In, Out] ProcessInfo[] infos);
     }
 
     /// <summary>
-    /// Per-process GPU VRAM info from nvidia-smi.
+    /// Per-process GPU VRAM info.
     /// </summary>
     internal class GpuProcessInfo
     {
@@ -298,14 +449,14 @@ namespace RimSynapse.NvidiaTool
 
         /// <summary>Check if this looks like an LM Studio process.</summary>
         public bool IsLmStudio => Name != null && (
-            Name.Contains("LM Studio") ||
-            Name.Contains("lms") ||
-            Name.Contains("llama") ||
-            Name.Contains("server"));
+            Name.IndexOf("LM Studio", StringComparison.OrdinalIgnoreCase) >= 0 ||
+            Name.IndexOf("lms", StringComparison.OrdinalIgnoreCase) >= 0 ||
+            Name.IndexOf("llama", StringComparison.OrdinalIgnoreCase) >= 0 ||
+            Name.Equals("server", StringComparison.OrdinalIgnoreCase));
 
         /// <summary>Check if this looks like a RimWorld process.</summary>
         public bool IsRimWorld => Name != null && (
-            Name.Contains("RimWorld") ||
-            Name.Contains("Unity"));
+            Name.IndexOf("RimWorld", StringComparison.OrdinalIgnoreCase) >= 0 ||
+            Name.IndexOf("Unity", StringComparison.OrdinalIgnoreCase) >= 0);
     }
 }

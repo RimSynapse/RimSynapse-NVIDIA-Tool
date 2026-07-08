@@ -83,6 +83,9 @@ namespace RimSynapse.NvidiaTool
             if (_mode == OverlayMode.Off) return;
             if (!NvidiaSmiReader.IsAvailable) return;
 
+            // Only show during active colony gameplay (not world map, not menus)
+            if (Verse.Current.Game?.CurrentMap == null) return;
+
             EnsureTextures();
 
             // Calculate panel height based on mode
