@@ -7,109 +7,153 @@ namespace RimSynapse.NvidiaTool
     /// Checks VRAM headroom on game load and warns the player if
     /// available VRAM is dangerously low before the colony even starts.
     ///
-    /// This runs once when the game component initializes (colony load).
-    /// It uses NVML data (already polling) and the VramBreakdown estimates.
+    /// NOT a GameComponent — uses static state only. Zero save-file footprint.
+    /// The mod can be safely added or removed from any save game.
+    ///
+    /// Called from the Harmony GUI patch when a colony is first loaded.
     /// </summary>
-    public class VramWarning : GameComponent
+    internal static class VramWarning
     {
         /// <summary>Minimum GB of free VRAM recommended for stable play.</summary>
         private const float MinFreeGb = 2.0f;
 
-        /// <summary>Only warn once per game session.</summary>
-        private static bool _hasWarned;
+        /// <summary>Only warn/notify once per game load.</summary>
+        private static bool _hasChecked;
 
-        public VramWarning(Game game) : base() { }
-
-        /// <summary>
-        /// Called once when the game component is first initialized.
-        /// </summary>
-        public override void FinalizeInit()
-        {
-            base.FinalizeInit();
-
-            // Delay the check slightly to let NVML poll at least once
-            if (_hasWarned) return;
-            if (!NvidiaSmiReader.IsAvailable) return;
-
-            CheckVramHeadroom();
-        }
-
-        private void CheckVramHeadroom()
-        {
-            float totalMb = NvidiaSmiReader.TotalVramMb;
-            float usedMb = NvidiaSmiReader.UsedVramMb;
-
-            // If NVML hasn't polled yet, try again on next GameComponentOnGUI
-            if (totalMb <= 0f) return;
-
-            float freeMb = totalMb - usedMb;
-            float freeGb = freeMb / 1024f;
-
-            if (freeGb < MinFreeGb)
-            {
-                _hasWarned = true;
-
-                // Build a helpful warning message
-                VramBreakdown.Refresh();
-                float systemGb = VramBreakdown.SystemMb / 1024f;
-                float lmsGb = VramBreakdown.LmStudioMb / 1024f;
-                float totalGb = totalMb / 1024f;
-                float usedGb = usedMb / 1024f;
-
-                string msg =
-                    "RimSynapse NVIDIA Tool — VRAM Warning\n\n" +
-                    $"Your GPU has {freeGb:F1} GB free out of {totalGb:F1} GB.\n" +
-                    $"Before RimWorld even started, your system was already using {usedGb:F1} GB:\n\n" +
-                    $"  • System / Desktop: ~{systemGb:F1} GB\n" +
-                    $"  • LM Studio model:  ~{lmsGb:F1} GB\n" +
-                    $"  • RimWorld:          ~{VramBreakdown.RimWorldMb / 1024f:F1} GB\n\n" +
-                    $"With less than {MinFreeGb:F0} GB free, you may experience:\n" +
-                    "  • Late-game slowdowns as colony grows\n" +
-                    "  • Frame drops during large raids\n" +
-                    "  • GPU memory thrashing (stuttering)\n\n" +
-                    "Suggestions:\n" +
-                    "  • Load a smaller LLM in LM Studio (e.g., 7B instead of 12B)\n" +
-                    "  • Reduce the model's context window in LM Studio\n" +
-                    "  • Close GPU-heavy background apps (Chrome, Discord)\n" +
-                    "  • Lower RimWorld graphics settings\n\n" +
-                    "This warning won't appear again this session.";
-
-                // Show as a RimWorld dialog
-                Find.WindowStack.Add(new Dialog_MessageBox(
-                    msg,
-                    "Got it",
-                    null,
-                    "Open GPU Overlay",
-                    delegate
-                    {
-                        OverlayHud.SetMode(OverlayMode.Advanced);
-                    },
-                    null,
-                    false,
-                    null,
-                    null));
-
-                Verse.Log.Warning(
-                    $"[RimSynapse NV] Low VRAM: {freeGb:F1} GB free of {totalGb:F1} GB. " +
-                    $"System: {systemGb:F1} GB, LM Studio: {lmsGb:F1} GB.");
-            }
-            else
-            {
-                _hasWarned = true; // Don't check again even if OK
-            }
-        }
+        /// <summary>Track which Game instance we last checked for.</summary>
+        private static int _lastGameId;
 
         /// <summary>
-        /// Fallback: if NVML hadn't polled during FinalizeInit,
-        /// check on first GUI frame instead.
+        /// Called from the GUI patch each frame. Checks once per game load.
         /// </summary>
-        public override void GameComponentOnGUI()
+        internal static void CheckOnce()
         {
-            if (_hasWarned) return;
             if (!NvidiaSmiReader.IsAvailable) return;
             if (NvidiaSmiReader.TotalVramMb <= 0f) return;
 
+            // Detect new game load by checking if the Game instance changed
+            var game = Verse.Current.Game;
+            if (game == null) return;
+            int gameId = game.GetHashCode();
+
+            if (_hasChecked && gameId == _lastGameId) return;
+
+            _hasChecked = true;
+            _lastGameId = gameId;
+
             CheckVramHeadroom();
+        }
+
+        private static void CheckVramHeadroom()
+        {
+            float totalMb = NvidiaSmiReader.TotalVramMb;
+            float usedMb = NvidiaSmiReader.UsedVramMb;
+            float freeMb = totalMb - usedMb;
+            float freeGb = freeMb / 1024f;
+
+            // Check user preference
+            bool alwaysNotify = DevToolsMod.Instance?.Settings?.alwaysNotifyVram ?? false;
+
+            if (alwaysNotify)
+            {
+                // Always show — informational status, not alarming
+                ShowInfoDialog(freeGb, totalMb, usedMb);
+            }
+            else if (freeGb < MinFreeGb)
+            {
+                // Only warn when VRAM is critically low
+                ShowWarningDialog(freeGb, totalMb, usedMb);
+            }
+        }
+
+        /// <summary>
+        /// Informational dialog — shown every load when "Always Notify" is checked.
+        /// Non-alarming, just tells them their VRAM status.
+        /// </summary>
+        private static void ShowInfoDialog(float freeGb, float totalMb, float usedMb)
+        {
+            VramBreakdown.Refresh();
+            float totalGb = totalMb / 1024f;
+            float usedGb = usedMb / 1024f;
+            float systemGb = VramBreakdown.SystemMb / 1024f;
+            float lmsGb = VramBreakdown.LmStudioMb / 1024f;
+            float rwGb = VramBreakdown.RimWorldMb / 1024f;
+
+            string status = freeGb >= MinFreeGb
+                ? $"✓  You have {freeGb:F1} GB free — you're in good shape."
+                : $"⚠  You have {freeGb:F1} GB free — this is tight for late-game.";
+
+            string msg =
+                "RimSynapse GPU — VRAM Status\n\n" +
+                $"GPU: {NvidiaSmiReader.GpuName}\n" +
+                $"VRAM: {usedGb:F1} / {totalGb:F1} GB used\n\n" +
+                $"  • System / Desktop:  {systemGb:F1} GB\n" +
+                $"  • LM Studio model:   {lmsGb:F1} GB\n" +
+                $"  • RimWorld:          {rwGb:F1} GB\n" +
+                $"  • Free:              {freeGb:F1} GB\n\n" +
+                status + "\n\n" +
+                "Disable 'Always show VRAM status' in mod settings to only see warnings.";
+
+            Find.WindowStack.Add(new Dialog_MessageBox(
+                msg,
+                "OK",
+                null,
+                null,
+                null,
+                null,
+                false,
+                null,
+                null));
+        }
+
+        /// <summary>
+        /// Warning dialog — shown only when VRAM headroom is critically low.
+        /// Includes actionable suggestions.
+        /// </summary>
+        private static void ShowWarningDialog(float freeGb, float totalMb, float usedMb)
+        {
+            VramBreakdown.Refresh();
+            float totalGb = totalMb / 1024f;
+            float usedGb = usedMb / 1024f;
+            float systemGb = VramBreakdown.SystemMb / 1024f;
+            float lmsGb = VramBreakdown.LmStudioMb / 1024f;
+            float rwGb = VramBreakdown.RimWorldMb / 1024f;
+
+            string msg =
+                "RimSynapse GPU — VRAM Warning\n\n" +
+                $"Your GPU has {freeGb:F1} GB free out of {totalGb:F1} GB.\n" +
+                $"Before RimWorld even started, your system was already using {usedGb:F1} GB:\n\n" +
+                $"  • System / Desktop:  ~{systemGb:F1} GB\n" +
+                $"  • LM Studio model:   ~{lmsGb:F1} GB\n" +
+                $"  • RimWorld:          ~{rwGb:F1} GB\n\n" +
+                $"With less than {MinFreeGb:F0} GB free, you may experience:\n" +
+                "  • Late-game slowdowns as colony grows\n" +
+                "  • Frame drops during large raids\n" +
+                "  • GPU memory thrashing (stuttering)\n\n" +
+                "Suggestions:\n" +
+                "  • Load a smaller LLM in LM Studio (e.g., 7B instead of 12B)\n" +
+                "  • Reduce the model's context window in LM Studio\n" +
+                "  • Close GPU-heavy background apps (Chrome, Discord)\n" +
+                "  • Lower RimWorld graphics settings\n\n" +
+                "Enable 'Always show VRAM status' in mod settings for info every load.";
+
+            Find.WindowStack.Add(new Dialog_MessageBox(
+                msg,
+                "Got it",
+                null,
+                "Open GPU Overlay",
+                delegate
+                {
+                    OverlayHud.SetMode(OverlayMode.Advanced);
+                },
+                null,
+                false,
+                null,
+                null));
+
+            Verse.Log.Warning(
+                $"[RimSynapse NV] Low VRAM: {freeGb:F1} GB free of {totalGb:F1} GB. " +
+                $"System: {systemGb:F1} GB, LM Studio: {lmsGb:F1} GB.");
         }
     }
 }

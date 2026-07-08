@@ -11,12 +11,17 @@ namespace RimSynapse.NvidiaTool
     {
         public static DevToolsMod Instance { get; private set; }
 
+        public DevToolsSettings Settings { get; private set; }
+
         private SynapseModHandle _handle;
         private DevToolsWindow _window;
 
         public DevToolsMod(ModContentPack content) : base(content)
         {
             Instance = this;
+
+            // Load persistent settings
+            Settings = GetSettings<DevToolsSettings>();
 
             // Register with Core (no system prompt — this mod doesn't make LLM calls)
             _handle = SynapseCore.Register(
@@ -67,6 +72,26 @@ namespace RimSynapse.NvidiaTool
             listing.Label("  Click the mode label on the overlay to cycle.");
             listing.Label("  Drag the overlay header to reposition.");
             GUI.color = prev1;
+
+            listing.Gap(12f);
+            listing.GapLine();
+
+            // ── VRAM notification ──
+            listing.Label("VRAM Notifications");
+            listing.Gap(4f);
+
+            listing.CheckboxLabeled(
+                "Always show VRAM status on game load",
+                ref Settings.alwaysNotifyVram,
+                "When checked, shows your VRAM breakdown every time you load a colony.\n" +
+                "When unchecked, only warns if VRAM headroom is critically low (< 2 GB).");
+
+            listing.Gap(4f);
+            var prev2 = GUI.color;
+            GUI.color = new Color(0.6f, 0.6f, 0.6f);
+            listing.Label("  Checked: info dialog every load (non-blocking)");
+            listing.Label("  Unchecked: warning only when < 2 GB free (default)");
+            GUI.color = prev2;
 
             listing.Gap(12f);
             listing.GapLine();
