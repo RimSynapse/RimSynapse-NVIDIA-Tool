@@ -281,12 +281,17 @@ namespace RimSynapse.NvidiaTool
 
                     // Resolve process name from PID (safe .NET API, no process spawning)
                     string procName = ResolveProcessName(pid);
+                    float vramMb = infos[i].usedGpuMemory / (1024f * 1024f);
+
+                    // Sanity clamp: process can't use more VRAM than the GPU has
+                    if (vramMb > TotalVramMb) vramMb = 0f;
+                    if (vramMb < 0f) vramMb = 0f;
 
                     list.Add(new GpuProcessInfo
                     {
                         Pid = pid,
                         Name = procName,
-                        VramMb = infos[i].usedGpuMemory / (1024f * 1024f),
+                        VramMb = vramMb,
                     });
                 }
             }
@@ -374,13 +379,16 @@ namespace RimSynapse.NvidiaTool
             public ulong used;  // bytes
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        // Must match NVML C header exactly. The C struct has:
+        //   uint pid (4 bytes) + 4 bytes padding + ulong usedGpuMemory (8 bytes)
+        //   + uint gpuInstanceId (4) + uint computeInstanceId (4) = 24 bytes total
+        [StructLayout(LayoutKind.Explicit, Size = 24)]
         internal struct ProcessInfo
         {
-            public uint pid;
-            public ulong usedGpuMemory; // bytes
-            public uint gpuInstanceId;
-            public uint computeInstanceId;
+            [FieldOffset(0)]  public uint pid;
+            [FieldOffset(8)]  public ulong usedGpuMemory; // bytes
+            [FieldOffset(16)] public uint gpuInstanceId;
+            [FieldOffset(20)] public uint computeInstanceId;
         }
 
         // ── Init / Shutdown ──

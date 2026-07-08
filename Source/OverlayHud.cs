@@ -33,10 +33,10 @@ namespace RimSynapse.NvidiaTool
         private static Vector2 _dragOffset;
 
         // ── Layout constants ──
-        private const float PanelWidth = 260f;
-        private const float RowHeight = 18f;
-        private const float Padding = 8f;
-        private const float HeaderHeight = 22f;
+        private const float PanelWidth = 280f;
+        private const float RowHeight = 20f;
+        private const float Padding = 10f;
+        private const float HeaderHeight = 24f;
         private const float BarHeight = 4f;
 
         // ── Colors ──
@@ -278,15 +278,43 @@ namespace RimSynapse.NvidiaTool
         private void DrawProcessRow(float x, ref float y, float width,
             string name, float usedMb, float totalUsedMb, float totalMb)
         {
+            if (usedMb <= 0f)
+            {
+                DrawRow(x, ref y, width, name, "—", TextLabel);
+                return;
+            }
+
             float pct = totalMb > 0 ? (usedMb / totalMb) * 100f : 0f;
             float gb = usedMb / 1024f;
 
-            string valueStr = usedMb > 0
-                ? $"{pct:F0}%   {gb:F1} GB"
-                : "—";
+            // 3-column: label (40%) | percent (20%) | GB (40%)
+            var labelStyle = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = 11,
+                alignment = TextAnchor.MiddleLeft,
+                normal = { textColor = TextLabel },
+            };
+            var pctStyle = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = 11,
+                alignment = TextAnchor.MiddleRight,
+                normal = { textColor = TextValue },
+            };
+            var gbStyle = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = 11,
+                alignment = TextAnchor.MiddleRight,
+                normal = { textColor = TextValue },
+            };
 
-            Color color = usedMb > 0 ? TextValue : TextLabel;
-            DrawRow(x, ref y, width, name, valueStr, color);
+            float col1 = width * 0.40f;
+            float col2 = width * 0.22f;
+            float col3 = width * 0.38f;
+
+            GUI.Label(new Rect(x, y, col1, RowHeight), name, labelStyle);
+            GUI.Label(new Rect(x + col1, y, col2, RowHeight), $"{pct:F0}%", pctStyle);
+            GUI.Label(new Rect(x + col1 + col2, y, col3, RowHeight), $"{gb:F1} GB", gbStyle);
+            y += RowHeight;
         }
 
         private void DrawMiniBar(float x, ref float y, float width,
