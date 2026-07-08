@@ -161,32 +161,18 @@ namespace RimSynapse.NvidiaTool
             DrawMiniBar(x, ref y, contentWidth, vramPct, BarVram);
             y += 4f;
 
-            // ── Per-process breakdown ──
-            var processes = NvidiaSmiReader.Processes;
+            // ── Per-application breakdown ──
+            // Uses Unity's own memory tracking + model estimation (no NVML process queries)
+            VramBreakdown.Refresh();
 
-            // System (everything not RimWorld or LM Studio)
-            float lmsMb = 0f, rwMb = 0f, otherMb = 0f;
-            if (processes != null)
-            {
-                foreach (var p in processes)
-                {
-                    if (p.IsLmStudio) lmsMb += p.VramMb;
-                    else if (p.IsRimWorld) rwMb += p.VramMb;
-                    else otherMb += p.VramMb;
-                }
-            }
-            // System = used - identified processes
-            float identifiedMb = lmsMb + rwMb + otherMb;
-            float systemMb = NvidiaSmiReader.UsedVramMb - identifiedMb;
-            if (systemMb < 0) systemMb = 0;
             float totalUsedMb = NvidiaSmiReader.UsedVramMb;
 
             DrawProcessRow(x, ref y, contentWidth, "System",
-                systemMb + otherMb, totalUsedMb, NvidiaSmiReader.TotalVramMb);
+                VramBreakdown.SystemMb, totalUsedMb, NvidiaSmiReader.TotalVramMb);
             DrawProcessRow(x, ref y, contentWidth, "RimWorld",
-                rwMb, totalUsedMb, NvidiaSmiReader.TotalVramMb);
+                VramBreakdown.RimWorldMb, totalUsedMb, NvidiaSmiReader.TotalVramMb);
             DrawProcessRow(x, ref y, contentWidth, "LM Studio",
-                lmsMb, totalUsedMb, NvidiaSmiReader.TotalVramMb);
+                VramBreakdown.LmStudioMb, totalUsedMb, NvidiaSmiReader.TotalVramMb);
 
             // ── Advanced section ──
             if (_mode == OverlayMode.Advanced)

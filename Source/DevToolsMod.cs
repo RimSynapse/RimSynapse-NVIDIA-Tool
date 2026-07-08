@@ -159,16 +159,16 @@ namespace RimSynapse.NvidiaTool
     }
 
     /// <summary>
-    /// Post-load hook. Sets the overlay to Basic mode by default.
+    /// Post-load hook. Overlay starts Off — use the toolbar toggle to enable.
     /// </summary>
     [StaticConstructorOnStartup]
     public static class DevToolsStartup
     {
         static DevToolsStartup()
         {
-            // Default to Basic overlay when game starts
-            OverlayHud.SetMode(OverlayMode.Basic);
-            Verse.Log.Message("[RimSynapse NV] DevTools startup — overlay set to Basic.");
+            // Overlay starts off — toolbar toggle icon lets users enable it
+            OverlayHud.SetMode(OverlayMode.Off);
+            Verse.Log.Message("[RimSynapse NV] DevTools ready. Use toolbar icon to toggle GPU overlay.");
         }
     }
 }

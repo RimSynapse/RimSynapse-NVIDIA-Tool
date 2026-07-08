@@ -84,7 +84,6 @@ namespace RimSynapse.NvidiaTool
                 try
                 {
                     PollGpuStats();
-                    PollProcesses();
                     PushToCoreFramework();
                 }
                 catch (Exception ex)
