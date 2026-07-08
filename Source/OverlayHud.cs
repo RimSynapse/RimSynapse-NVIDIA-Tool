@@ -184,9 +184,16 @@ namespace RimSynapse.NvidiaTool
                 string modelName = "—";
                 try
                 {
-                    var settings = RimSynapseMod.Instance?.Settings;
-                    if (settings != null && !string.IsNullOrEmpty(settings.selectedModel))
-                        modelName = TruncateModel(settings.selectedModel);
+                    // Prefer live model from API, fall back to persisted setting
+                    string active = SynapseClient.ActiveModelName;
+                    if (!string.IsNullOrEmpty(active))
+                        modelName = TruncateModel(active);
+                    else
+                    {
+                        var settings = RimSynapseMod.Instance?.Settings;
+                        if (settings != null && !string.IsNullOrEmpty(settings.selectedModel))
+                            modelName = TruncateModel(settings.selectedModel);
+                    }
                 }
                 catch { }
                 DrawRow(x, ref y, contentWidth, "Model", modelName, TextValue);

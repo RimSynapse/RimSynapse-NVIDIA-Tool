@@ -119,12 +119,19 @@ namespace RimSynapse.NvidiaTool
         }
 
         /// <summary>
-        /// Get the currently loaded model name from Core's settings.
+        /// Get the currently loaded model name from Core.
+        /// Prefers the LIVE model from ModelManager (queried from LM Studio API)
+        /// over the persisted settings value.
         /// </summary>
         private static string GetLoadedModelName()
         {
             try
             {
+                // Live model from LM Studio API (via Core's public API)
+                string active = SynapseClient.ActiveModelName;
+                if (!string.IsNullOrEmpty(active)) return active;
+
+                // Fallback: user-selected model in settings
                 var settings = RimSynapseMod.Instance?.Settings;
                 return settings?.selectedModel;
             }
@@ -150,13 +157,23 @@ namespace RimSynapse.NvidiaTool
 
             modelName = modelName.ToLowerInvariant();
 
-            // Match patterns like "12b", "7b", "70b", "3.8b", "0.5b"
-            // but NOT patterns like "q4b", "a4b", "e4b" (quantization/expert markers)
+            // Match standard patterns: "12b", "7b", "70b", "3.8b", "0.5b"
+            // Skip quantization markers: "q4b", "q8b"
             var match = Regex.Match(modelName, @"(?<![a-z])(\d+\.?\d*)b(?!\w)");
             if (match.Success)
             {
                 float val;
                 if (float.TryParse(match.Groups[1].Value, out val) && val > 0f)
+                    return val;
+            }
+
+            // Handle MoE/expert notation: "e4b" = expert 4B, "a4b" = active 4B
+            // (e.g., gemma-4-e4b = 4B active expert parameters)
+            var moeMatch = Regex.Match(modelName, @"[ea](\d+\.?\d*)b(?!\w)");
+            if (moeMatch.Success)
+            {
+                float val;
+                if (float.TryParse(moeMatch.Groups[1].Value, out val) && val > 0f)
                     return val;
             }
 
