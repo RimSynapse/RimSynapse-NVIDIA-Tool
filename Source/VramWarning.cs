@@ -46,13 +46,23 @@ namespace RimSynapse.NvidiaTool
 
         private static void CheckVramHeadroom()
         {
+            // Check user preference
+            bool alwaysNotify = DevToolsMod.Instance?.Settings?.alwaysNotifyVram ?? false;
+            bool isRemote = RimSynapseMod.Instance?.Settings?.IsRemoteUrl ?? false;
+
+            if (isRemote)
+            {
+                if (alwaysNotify)
+                {
+                    ShowRemoteInfoDialog();
+                }
+                return; // Never trigger a low-VRAM warning for a remote LM Studio setup
+            }
+
             float totalMb = NvidiaSmiReader.TotalVramMb;
             float usedMb = NvidiaSmiReader.UsedVramMb;
             float freeMb = totalMb - usedMb;
             float freeGb = freeMb / 1024f;
-
-            // Check user preference
-            bool alwaysNotify = DevToolsMod.Instance?.Settings?.alwaysNotifyVram ?? false;
 
             if (alwaysNotify)
             {
@@ -64,6 +74,19 @@ namespace RimSynapse.NvidiaTool
                 // Only warn when VRAM is critically low
                 ShowWarningDialog(freeGb, totalMb, usedMb);
             }
+        }
+
+        private static void ShowRemoteInfoDialog()
+        {
+            string msg = "RimSynapse NVIDIA Tool is active, but RimSynapse Core is configured to use a Remote LM Studio host.\n\n" +
+                         "Local VRAM will not be monitored for LM Studio memory overhead.";
+
+            var dialog = new Dialog_MessageBox(
+                text: msg,
+                buttonAText: "OK",
+                title: "RimSynapse GPU: Remote Host Detected"
+            );
+            Find.WindowStack.Add(dialog);
         }
 
         /// <summary>

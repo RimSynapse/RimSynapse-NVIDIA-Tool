@@ -146,30 +146,47 @@ namespace RimSynapse.NvidiaTool
 
             y += HeaderHeight + 2f;
 
-            // ── VRAM total line ──
-            float totalVramGb = NvidiaSmiReader.TotalVramMb / 1024f;
-            float usedVramGb = NvidiaSmiReader.UsedVramMb / 1024f;
-            float availableVramGb = totalVramGb - usedVramGb;
-            float vramPct = totalVramGb > 0 ? usedVramGb / totalVramGb : 0f;
+            // ── VRAM Block ──
+            bool isRemote = RimSynapseMod.Instance?.Settings?.IsRemoteUrl ?? false;
 
-            DrawRow(x, ref y, contentWidth, "Available VRAM",
-                $"{availableVramGb:F1} / {totalVramGb:F1} GB",
-                VramColor(vramPct));
+            if (isRemote)
+            {
+                var redStyle = new GUIStyle(GUI.skin.label)
+                {
+                    fontSize = 11,
+                    fontStyle = FontStyle.Bold,
+                    alignment = TextAnchor.MiddleCenter,
+                    normal = { textColor = new Color(1f, 0.3f, 0.3f) }
+                };
+                GUI.Label(new Rect(x, y, contentWidth, 20f), "REMOTE LMSTUDIO", redStyle);
+                y += 24f;
+            }
+            else
+            {
+                float totalVramGb = NvidiaSmiReader.TotalVramMb / 1024f;
+                float usedVramGb = NvidiaSmiReader.UsedVramMb / 1024f;
+                float availableVramGb = totalVramGb - usedVramGb;
+                float vramPct = totalVramGb > 0 ? usedVramGb / totalVramGb : 0f;
 
-            // VRAM bar
-            DrawMiniBar(x, ref y, contentWidth, vramPct, BarVram);
-            y += 4f;
+                DrawRow(x, ref y, contentWidth, "Available VRAM",
+                    $"{availableVramGb:F1} / {totalVramGb:F1} GB",
+                    VramColor(vramPct));
 
-            // ── Per-application breakdown ──
-            VramBreakdown.Refresh();
-            float totalUsedMb = NvidiaSmiReader.UsedVramMb;
+                // VRAM bar
+                DrawMiniBar(x, ref y, contentWidth, vramPct, BarVram);
+                y += 4f;
 
-            DrawProcessRow(x, ref y, contentWidth, "System",
-                VramBreakdown.SystemMb, totalUsedMb, NvidiaSmiReader.TotalVramMb);
-            DrawProcessRow(x, ref y, contentWidth, "RimWorld",
-                VramBreakdown.RimWorldMb, totalUsedMb, NvidiaSmiReader.TotalVramMb);
-            DrawProcessRow(x, ref y, contentWidth, "LM Studio",
-                VramBreakdown.LmStudioMb, totalUsedMb, NvidiaSmiReader.TotalVramMb);
+                // ── Per-application breakdown ──
+                VramBreakdown.Refresh();
+                float totalUsedMb = NvidiaSmiReader.UsedVramMb;
+
+                DrawProcessRow(x, ref y, contentWidth, "System",
+                    VramBreakdown.SystemMb, totalUsedMb, NvidiaSmiReader.TotalVramMb);
+                DrawProcessRow(x, ref y, contentWidth, "RimWorld",
+                    VramBreakdown.RimWorldMb, totalUsedMb, NvidiaSmiReader.TotalVramMb);
+                DrawProcessRow(x, ref y, contentWidth, "LM Studio",
+                    VramBreakdown.LmStudioMb, totalUsedMb, NvidiaSmiReader.TotalVramMb);
+            }
 
             // ── Advanced section (shown in Advanced + Developer) ──
             if (_mode == OverlayMode.Advanced || _mode == OverlayMode.Developer)
