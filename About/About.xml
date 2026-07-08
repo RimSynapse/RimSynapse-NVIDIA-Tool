@@ -3,7 +3,7 @@
     <name>RimSynapse NVIDIA Tool</name>
     <author>ArchDukeJim</author>
     <packageId>archDukeJim.rimsynapseNvidiaTool</packageId>
-    <url>https://github.com/archdukejim/RimSynapse-NVIDIA-Tool</url>
+    <url>https://github.com/RimSynapse/RimSynapse-NVIDIA-Tool</url>
     <supportedVersions>
         <li>1.6</li>
     </supportedVersions>
@@ -16,7 +16,7 @@
         <li>
             <packageId>archDukeJim.rimsynapseCore</packageId>
             <displayName>RimSynapse Core</displayName>
-            <downloadUrl>https://github.com/archdukejim/RimSynapse</downloadUrl>
+            <downloadUrl>https://github.com/RimSynapse/RimSynapse-Core</downloadUrl>
         </li>
     </modDependencies>
     <loadAfter>
