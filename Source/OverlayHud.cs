@@ -144,13 +144,6 @@ namespace RimSynapse.NvidiaTool
             var modeBtnRect = new Rect(x + contentWidth - 60f, y, 60f, HeaderHeight - 4f);
             GUI.Label(modeBtnRect, modeLabel, modeStyle);
 
-            // Make the entire header row clickable to cycle modes
-            if (GUI.Button(headerRect, "", GUIStyle.none))
-            {
-                CycleMode();
-                if (_mode == OverlayMode.Off) _mode = OverlayMode.Basic; // Don't let clicking the header turn it off completely
-            }
-
             y += HeaderHeight + 2f;
 
             // ── VRAM total line ──
@@ -371,6 +364,8 @@ namespace RimSynapse.NvidiaTool
             y += BarHeight;
         }
 
+        private static bool _wasDragged;
+
         private static void HandleDrag(Rect panelRect)
         {
             var headerRect = new Rect(panelRect.x, panelRect.y, PanelWidth, HeaderHeight + Padding);
@@ -379,16 +374,24 @@ namespace RimSynapse.NvidiaTool
             if (evt.type == EventType.MouseDown && headerRect.Contains(evt.mousePosition))
             {
                 _dragging = true;
+                _wasDragged = false;
                 _dragOffset = evt.mousePosition - _position;
                 evt.Use();
             }
             else if (evt.type == EventType.MouseUp && _dragging)
             {
                 _dragging = false;
+                if (!_wasDragged)
+                {
+                    // It was a click, not a drag. Cycle the mode!
+                    CycleMode();
+                    if (_mode == OverlayMode.Off) _mode = OverlayMode.Basic;
+                }
                 evt.Use();
             }
             else if (evt.type == EventType.MouseDrag && _dragging)
             {
+                _wasDragged = true;
                 _position = evt.mousePosition - _dragOffset;
                 evt.Use();
             }
