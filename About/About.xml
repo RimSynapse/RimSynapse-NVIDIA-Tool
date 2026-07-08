@@ -16,6 +16,7 @@
         <li>
             <packageId>archDukeJim.rimsynapseCore</packageId>
             <displayName>RimSynapse Core</displayName>
+            <downloadUrl>https://github.com/archdukejim/RimSynapse</downloadUrl>
         </li>
     </modDependencies>
     <loadAfter>
