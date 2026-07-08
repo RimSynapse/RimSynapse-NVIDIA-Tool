@@ -38,9 +38,9 @@ namespace RimSynapse.NvidiaTool
             var tex = new Texture2D(size, size, TextureFormat.ARGB32, false);
             tex.filterMode = FilterMode.Point;
 
-            // NVIDIA green
-            var green = new Color32(118, 185, 0, 255);    // #76B900
-            var dimGreen = new Color32(118, 185, 0, 160);
+            // Match RimWorld's toolbar icon style: white/light gray
+            var body = new Color32(220, 220, 220, 255);     // light gray
+            var pins = new Color32(180, 180, 180, 180);     // dimmer gray
             var clear = new Color32(0, 0, 0, 0);
 
             // Fill transparent
@@ -52,18 +52,18 @@ namespace RimSynapse.NvidiaTool
             int chipX = 8, chipY = 8, chipW = 8, chipH = 8;
             for (int y = chipY; y < chipY + chipH; y++)
                 for (int x = chipX; x < chipX + chipW; x++)
-                    pixels[y * size + x] = green;
+                    pixels[y * size + x] = body;
 
             // Draw chip outline (1px border around the chip)
             for (int x = chipX - 1; x <= chipX + chipW; x++)
             {
-                pixels[(chipY - 1) * size + x] = green;          // top
-                pixels[(chipY + chipH) * size + x] = green;       // bottom
+                pixels[(chipY - 1) * size + x] = body;           // top
+                pixels[(chipY + chipH) * size + x] = body;        // bottom
             }
             for (int y = chipY - 1; y <= chipY + chipH; y++)
             {
-                pixels[y * size + (chipX - 1)] = green;           // left
-                pixels[y * size + (chipX + chipW)] = green;        // right
+                pixels[y * size + (chipX - 1)] = body;            // left
+                pixels[y * size + (chipX + chipW)] = body;         // right
             }
 
             // Draw pin traces (extending from chip edges)
@@ -71,36 +71,37 @@ namespace RimSynapse.NvidiaTool
             for (int i = 0; i < 4; i++)
             {
                 int px = chipX + i * 2;
-                pixels[(chipY - 2) * size + px] = dimGreen;
-                pixels[(chipY - 3) * size + px] = dimGreen;
+                pixels[(chipY - 2) * size + px] = pins;
+                pixels[(chipY - 3) * size + px] = pins;
             }
             // Bottom pins
             for (int i = 0; i < 4; i++)
             {
                 int px = chipX + i * 2;
-                pixels[(chipY + chipH + 1) * size + px] = dimGreen;
-                pixels[(chipY + chipH + 2) * size + px] = dimGreen;
+                pixels[(chipY + chipH + 1) * size + px] = pins;
+                pixels[(chipY + chipH + 2) * size + px] = pins;
             }
             // Left pins
             for (int i = 0; i < 4; i++)
             {
                 int py = chipY + i * 2;
-                pixels[py * size + (chipX - 2)] = dimGreen;
-                pixels[py * size + (chipX - 3)] = dimGreen;
+                pixels[py * size + (chipX - 2)] = pins;
+                pixels[py * size + (chipX - 3)] = pins;
             }
             // Right pins
             for (int i = 0; i < 4; i++)
             {
                 int py = chipY + i * 2;
-                pixels[py * size + (chipX + chipW + 1)] = dimGreen;
-                pixels[py * size + (chipX + chipW + 2)] = dimGreen;
+                pixels[py * size + (chipX + chipW + 1)] = pins;
+                pixels[py * size + (chipX + chipW + 2)] = pins;
             }
 
-            // Small "eye" dot in center of chip (the GPU "core")
-            pixels[12 * size + 12] = new Color32(200, 255, 100, 255);
-            pixels[11 * size + 12] = new Color32(200, 255, 100, 255);
-            pixels[12 * size + 11] = new Color32(200, 255, 100, 255);
-            pixels[11 * size + 11] = new Color32(200, 255, 100, 255);
+            // Small dot in center of chip (the GPU "core")
+            var bright = new Color32(255, 255, 255, 255);
+            pixels[12 * size + 12] = bright;
+            pixels[11 * size + 12] = bright;
+            pixels[12 * size + 11] = bright;
+            pixels[11 * size + 11] = bright;
 
             tex.SetPixels32(pixels);
             tex.Apply(false, true); // makeNoLongerReadable = true for perf
@@ -156,9 +157,9 @@ namespace RimSynapse.NvidiaTool
             var tex = new Texture2D(size, size, TextureFormat.ARGB32, false);
             tex.filterMode = FilterMode.Point;
 
-            var green = new Color32(118, 185, 0, 255);
-            var dimGreen = new Color32(118, 185, 0, 160);
-            var bright = new Color32(200, 255, 100, 255);
+            var body = new Color32(220, 220, 220, 255);
+            var pins = new Color32(180, 180, 180, 180);
+            var bright = new Color32(255, 255, 255, 255);
             var clear = new Color32(0, 0, 0, 0);
 
             var pixels = new Color32[size * size];
@@ -168,36 +169,36 @@ namespace RimSynapse.NvidiaTool
             // Chip body
             for (int y = 8; y < 16; y++)
                 for (int x = 8; x < 16; x++)
-                    pixels[y * size + x] = green;
+                    pixels[y * size + x] = body;
 
             // Chip border
             for (int x = 7; x <= 16; x++)
             {
-                pixels[7 * size + x] = green;
-                pixels[16 * size + x] = green;
+                pixels[7 * size + x] = body;
+                pixels[16 * size + x] = body;
             }
             for (int y = 7; y <= 16; y++)
             {
-                pixels[y * size + 7] = green;
-                pixels[y * size + 16] = green;
+                pixels[y * size + 7] = body;
+                pixels[y * size + 16] = body;
             }
 
             // Pins (top, bottom, left, right)
             for (int i = 0; i < 4; i++)
             {
                 int px = 8 + i * 2;
-                pixels[6 * size + px] = dimGreen;
-                pixels[5 * size + px] = dimGreen;
-                pixels[17 * size + px] = dimGreen;
-                pixels[18 * size + px] = dimGreen;
+                pixels[6 * size + px] = pins;
+                pixels[5 * size + px] = pins;
+                pixels[17 * size + px] = pins;
+                pixels[18 * size + px] = pins;
             }
             for (int i = 0; i < 4; i++)
             {
                 int py = 8 + i * 2;
-                pixels[py * size + 6] = dimGreen;
-                pixels[py * size + 5] = dimGreen;
-                pixels[py * size + 17] = dimGreen;
-                pixels[py * size + 18] = dimGreen;
+                pixels[py * size + 6] = pins;
+                pixels[py * size + 5] = pins;
+                pixels[py * size + 17] = pins;
+                pixels[py * size + 18] = pins;
             }
 
             // Center dot

@@ -63,14 +63,15 @@ namespace RimSynapse.NvidiaTool
 
         public OverlayHud(Game game) : base() { }
 
-        /// <summary>Toggle overlay mode: Off → Basic → Advanced → Off.</summary>
+        /// <summary>Toggle overlay mode: Off → Basic → Advanced → Developer → Off.</summary>
         public static void CycleMode()
         {
             switch (_mode)
             {
                 case OverlayMode.Off: _mode = OverlayMode.Basic; break;
                 case OverlayMode.Basic: _mode = OverlayMode.Advanced; break;
-                case OverlayMode.Advanced: _mode = OverlayMode.Off; break;
+                case OverlayMode.Advanced: _mode = OverlayMode.Developer; break;
+                case OverlayMode.Developer: _mode = OverlayMode.Off; break;
             }
         }
 
@@ -90,10 +91,13 @@ namespace RimSynapse.NvidiaTool
 
             // Calculate panel height based on mode
             int basicRows = 5; // header + vram bar + system + rimworld + lmstudio
-            int advancedRows = _mode == OverlayMode.Advanced ? 6 : 0; // divider + model + ctx + tok/s + calls + throttle
+            bool showAdvanced = _mode == OverlayMode.Advanced || _mode == OverlayMode.Developer;
+            int advancedRows = showAdvanced ? 6 : 0; // divider + model + ctx + tok/s + calls + throttle
+            int devRows = _mode == OverlayMode.Developer ? 8 : 0; // divider + gpu + driver + temp + power + clocks + fan + util
             float panelHeight = Padding + HeaderHeight + Padding
                 + (basicRows * RowHeight)
                 + (advancedRows > 0 ? 4f + (advancedRows * RowHeight) : 0f)
+                + (devRows > 0 ? 4f + (devRows * RowHeight) : 0f)
                 + Padding;
 
             // Clamp position to screen
@@ -137,7 +141,13 @@ namespace RimSynapse.NvidiaTool
                 alignment = TextAnchor.MiddleRight,
                 normal = { textColor = new Color(0.5f, 0.5f, 0.6f) },
             };
-            string modeLabel = _mode == OverlayMode.Basic ? "[Basic]" : "[Advanced]";
+            string modeLabel;
+            switch (_mode)
+            {
+                case OverlayMode.Developer: modeLabel = "[Dev]"; break;
+                case OverlayMode.Advanced: modeLabel = "[Adv]"; break;
+                default: modeLabel = "[Basic]"; break;
+            }
             var modeBtnRect = new Rect(x + contentWidth - 60f, y, 60f, HeaderHeight - 4f);
             if (GUI.Button(modeBtnRect, modeLabel, modeStyle))
             {
@@ -174,8 +184,8 @@ namespace RimSynapse.NvidiaTool
             DrawProcessRow(x, ref y, contentWidth, "LM Studio",
                 VramBreakdown.LmStudioMb, totalUsedMb, NvidiaSmiReader.TotalVramMb);
 
-            // ── Advanced section ──
-            if (_mode == OverlayMode.Advanced)
+            // ── Advanced section (shown in Advanced + Developer) ──
+            if (_mode == OverlayMode.Advanced || _mode == OverlayMode.Developer)
             {
                 y += 2f;
                 // Divider line
@@ -187,7 +197,6 @@ namespace RimSynapse.NvidiaTool
                 string modelName = "—";
                 try
                 {
-                    // Try to get model from SynapseClient.Gpu or settings
                     var settings = RimSynapseMod.Instance?.Settings;
                     if (settings != null && !string.IsNullOrEmpty(settings.selectedModel))
                         modelName = TruncateModel(settings.selectedModel);
@@ -200,9 +209,7 @@ namespace RimSynapse.NvidiaTool
                 try
                 {
                     var gpu = SynapseClient.Gpu;
-                    // Context window is available through ModelManager indirectly
-                    // For now, show what we know
-                    ctxText = "8192 tok"; // Will be dynamic once we expose it
+                    ctxText = "8192 tok";
                 }
                 catch { /* Ignore */ }
                 DrawRow(x, ref y, contentWidth, "Context", ctxText, TextValue);
@@ -225,13 +232,69 @@ namespace RimSynapse.NvidiaTool
                 DrawRow(x, ref y, contentWidth, "Throttle",
                     $"{throttle:P0}", throttleColor);
 
-                // Queue depth (bonus)
+                // Queue depth
                 int queueDepth = SynapseClient.TotalQueueDepth;
                 if (queueDepth > 0)
                 {
                     DrawRow(x, ref y, contentWidth, "Queue",
                         queueDepth.ToString(), AccentYellow);
                 }
+            }
+
+            // ── Developer section (full GPU hardware stats) ──
+            if (_mode == OverlayMode.Developer)
+            {
+                y += 2f;
+                var divRect2 = new Rect(x, y, contentWidth, 1f);
+                GUI.DrawTexture(divRect2, _barBgTex);
+                y += 6f;
+
+                // GPU Name
+                DrawRow(x, ref y, contentWidth, "GPU",
+                    NvidiaSmiReader.GpuName, TextValue);
+
+                // Driver
+                DrawRow(x, ref y, contentWidth, "Driver",
+                    NvidiaSmiReader.DriverVersion, TextValue);
+
+                // Temperature — color-coded
+                int tempC = NvidiaSmiReader.TemperatureC;
+                Color tempColor = tempC < 60 ? AccentGreen
+                    : tempC < 75 ? AccentYellow
+                    : tempC < 85 ? AccentOrange : AccentRed;
+                DrawRow(x, ref y, contentWidth, "Temp",
+                    $"{tempC}°C", tempColor);
+
+                // Power
+                float pw = NvidiaSmiReader.PowerDrawW;
+                float pwLim = NvidiaSmiReader.PowerLimitW;
+                float pwPct = pwLim > 0 ? pw / pwLim : 0f;
+                Color pwColor = pwPct < 0.7f ? AccentGreen
+                    : pwPct < 0.9f ? AccentYellow : AccentOrange;
+                DrawRow(x, ref y, contentWidth, "Power",
+                    $"{pw:F0} / {pwLim:F0} W", pwColor);
+
+                // GPU Clock
+                DrawRow(x, ref y, contentWidth, "GPU Clock",
+                    $"{NvidiaSmiReader.GpuClockMhz} MHz", TextValue);
+
+                // Memory Clock
+                DrawRow(x, ref y, contentWidth, "Mem Clock",
+                    $"{NvidiaSmiReader.MemClockMhz} MHz", TextValue);
+
+                // Fan Speed
+                int fan = NvidiaSmiReader.FanSpeedPercent;
+                Color fanColor = fan < 50 ? AccentGreen
+                    : fan < 75 ? AccentYellow : AccentOrange;
+                DrawRow(x, ref y, contentWidth, "Fan",
+                    $"{fan}%", fanColor);
+
+                // GPU Utilization
+                int util = NvidiaSmiReader.UtilizationPercent;
+                Color utilColor = util < 50 ? AccentGreen
+                    : util < 80 ? AccentYellow : AccentOrange;
+                DrawRow(x, ref y, contentWidth, "GPU Util",
+                    $"{util}%", utilColor);
             }
         }
 
@@ -418,5 +481,6 @@ namespace RimSynapse.NvidiaTool
         Off,
         Basic,
         Advanced,
+        Developer,
     }
 }

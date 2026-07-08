@@ -49,6 +49,7 @@ namespace RimSynapse.NvidiaTool
             {
                 case OverlayMode.Basic: modeText = "Basic"; break;
                 case OverlayMode.Advanced: modeText = "Advanced"; break;
+                case OverlayMode.Developer: modeText = "Developer"; break;
                 default: modeText = "Off"; break;
             }
 
@@ -62,6 +63,7 @@ namespace RimSynapse.NvidiaTool
             GUI.color = new Color(0.6f, 0.6f, 0.6f);
             listing.Label("  Basic: VRAM breakdown (System, RimWorld, LM Studio)");
             listing.Label("  Advanced: + Model, tokens/s, API calls, throttle");
+            listing.Label("  Developer: + GPU temp, power, clocks, fan, utilization");
             listing.Label("  Click the mode label on the overlay to cycle.");
             listing.Label("  Drag the overlay header to reposition.");
             GUI.color = prev1;
