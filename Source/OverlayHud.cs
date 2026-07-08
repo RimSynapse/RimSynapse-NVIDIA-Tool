@@ -125,7 +125,7 @@ namespace RimSynapse.NvidiaTool
             };
             GUI.Label(new Rect(x, y, contentWidth * 0.6f, HeaderHeight), "▸ RimSynapse GPU", headerStyle);
 
-            // Mode toggle button
+            // Mode toggle button (entire header is clickable)
             var modeStyle = new GUIStyle(GUI.skin.label)
             {
                 fontSize = 9,
@@ -139,11 +139,16 @@ namespace RimSynapse.NvidiaTool
                 case OverlayMode.Advanced: modeLabel = "[Adv]"; break;
                 default: modeLabel = "[Basic]"; break;
             }
+            
+            // Draw the mode label
             var modeBtnRect = new Rect(x + contentWidth - 60f, y, 60f, HeaderHeight - 4f);
-            if (GUI.Button(modeBtnRect, modeLabel, modeStyle))
+            GUI.Label(modeBtnRect, modeLabel, modeStyle);
+
+            // Make the entire header row clickable to cycle modes
+            if (GUI.Button(headerRect, "", GUIStyle.none))
             {
                 CycleMode();
-                if (_mode == OverlayMode.Off) _mode = OverlayMode.Basic;
+                if (_mode == OverlayMode.Off) _mode = OverlayMode.Basic; // Don't let clicking the header turn it off completely
             }
 
             y += HeaderHeight + 2f;
