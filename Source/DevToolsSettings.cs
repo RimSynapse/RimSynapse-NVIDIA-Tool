@@ -9,11 +9,10 @@ namespace RimSynapse.NvidiaTool
     public class DevToolsSettings : ModSettings
     {
         /// <summary>
-        /// When true, show VRAM status dialog on every game load (informational).
-        /// When false, only show if VRAM is critically low (warning).
-        /// Default: false (warn only).
+        /// When true (default), show VRAM status dialog on every game load.
+        /// When false, only show if VRAM is critically low.
         /// </summary>
-        public bool alwaysNotifyVram = false;
+        public bool alwaysNotifyVram = true;
 
         public override void ExposeData()
         {

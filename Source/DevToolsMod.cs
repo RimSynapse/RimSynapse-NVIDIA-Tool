@@ -81,16 +81,16 @@ namespace RimSynapse.NvidiaTool
             listing.Gap(4f);
 
             listing.CheckboxLabeled(
-                "Always show VRAM status on game load",
+                "Show VRAM status on game load",
                 ref Settings.alwaysNotifyVram,
-                "When checked, shows your VRAM breakdown every time you load a colony.\n" +
-                "When unchecked, only warns if VRAM headroom is critically low (< 2 GB).");
+                "Shows your VRAM breakdown every time you load a colony.\n" +
+                "Uncheck to disable notifications (still warns if critically low).");
 
             listing.Gap(4f);
             var prev2 = GUI.color;
             GUI.color = new Color(0.6f, 0.6f, 0.6f);
-            listing.Label("  Checked: info dialog every load (non-blocking)");
-            listing.Label("  Unchecked: warning only when < 2 GB free (default)");
+            listing.Label("  Checked (default): VRAM status every colony load");
+            listing.Label("  Unchecked: only warns when < 3 GB free");
             GUI.color = prev2;
 
             listing.Gap(12f);
