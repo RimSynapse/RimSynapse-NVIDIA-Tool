@@ -4,6 +4,7 @@
     <author>RimSynapse Team</author>
     <packageId>RimSynapse.NVIDIATool</packageId>
     <url>https://github.com/RimSynapse/RimSynapse-NVIDIA-Tool</url>
+    <modVersion>0.2.0</modVersion>
     <supportedVersions>
         <li>1.6</li>
     </supportedVersions>
@@ -11,6 +12,7 @@
         <li>
             <packageId>RimSynapse.Core</packageId>
             <displayName>RimSynapse - Core</displayName>
+            <downloadUrl>https://github.com/RimSynapse/RimSynapse-Core/releases/latest</downloadUrl>
         </li>
     </modDependencies>
     <loadAfter>
