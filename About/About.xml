@@ -4,7 +4,7 @@
     <author>RimSynapse Team</author>
     <packageId>RimSynapse.NVIDIATool</packageId>
     <url>https://github.com/RimSynapse/RimSynapse-NVIDIA-Tool</url>
-    <modVersion>0.2.0</modVersion>
+    <modVersion>0.2.1</modVersion>
     <supportedVersions>
         <li>1.6</li>
     </supportedVersions>
@@ -61,4 +61,5 @@ This tool is optional and purely diagnostic. It does not affect gameplay. It is 
 [url=https://buymeacoffee.com/archdukejim]â˜• Buy me a coffee[/url]
     </description>
 </ModMetaData>
+
 
