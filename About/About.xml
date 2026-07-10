@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <ModMetaData>
     <name>RimSynapse - NVIDIA Tool</name>
     <author>RimSynapse Team</author>
@@ -20,16 +20,18 @@
     </loadAfter>
     <description>
 [h1]RimSynapse - NVIDIA Tool[/h1]
+[b]📚 [url=https://github.com/RimSynapse/RimSynapse-NVIDIA-Tool/wiki]Official Wiki & Documentation[/url][/b]
+
 [b]Real-Time GPU Monitoring and LLM Performance Dashboard for RimSynapse.[/b]
 
-This developer and power-user tool provides a comprehensive overview of your local GPU's health, VRAM usage, and LLM request performance — all rendered directly inside RimWorld's UI.
+This developer and power-user tool provides a comprehensive overview of your local GPU's health, VRAM usage, and LLM request performance â€” all rendered directly inside RimWorld's UI.
 
 [h2]Core Systems[/h2]
 [list]
 [*] [b]Live GPU Monitoring:[/b] Reads NVIDIA GPU stats via nvidia-smi in real-time. Displays VRAM usage, GPU temperature, utilization percentage, and power draw.
 [*] [b]VRAM Breakdown:[/b] Shows a detailed breakdown of estimated VRAM consumption: model size, KV cache, context window, and overhead. Helps you understand exactly where your GPU memory is going.
 [*] [b]VRAM Warnings:[/b] Proactive alerts when your GPU is approaching VRAM limits, with recommendations for model sizes and context window adjustments.
-[*] [b]Request Metrics:[/b] Tracks every LLM request made by RimSynapse mods — response times, token counts, throughput (tokens/second), and queue depth. Identifies bottlenecks in your AI pipeline.
+[*] [b]Request Metrics:[/b] Tracks every LLM request made by RimSynapse mods â€” response times, token counts, throughput (tokens/second), and queue depth. Identifies bottlenecks in your AI pipeline.
 [*] [b]In-Game Overlay HUD:[/b] A toggleable on-screen overlay that displays GPU stats, request queue status, and active model information without opening any menus.
 [*] [b]Developer Tools Window:[/b] A comprehensive debug window with tabs for GPU stats, request history, VRAM analysis, and configuration. Essential for mod developers building on RimSynapse.
 [/list]
@@ -56,6 +58,7 @@ This developer and power-user tool provides a comprehensive overview of your loc
 This tool is optional and purely diagnostic. It does not affect gameplay. It is intended for users who want to monitor their hardware while running local LLMs alongside RimWorld.
 
 [h2]Support the Project[/h2]
-[url=https://buymeacoffee.com/archdukejim]☕ Buy me a coffee[/url]
+[url=https://buymeacoffee.com/archdukejim]â˜• Buy me a coffee[/url]
     </description>
 </ModMetaData>
+
