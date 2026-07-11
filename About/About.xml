@@ -20,7 +20,7 @@
     </loadAfter>
     <description>
 [h1]RimSynapse - NVIDIA Tool[/h1]
-[b]📚 [url=https://github.com/RimSynapse/RimSynapse-NVIDIA-Tool/wiki]Official Wiki & Documentation[/url][/b]
+[b]📚 [url=https://github.com/RimSynapse/RimSynapse-NVIDIA-Tool/wiki]Official Wiki and Documentation[/url][/b]
 
 [b]Real-Time GPU Monitoring and LLM Performance Dashboard for RimSynapse.[/b]
 
@@ -58,7 +58,7 @@ This developer and power-user tool provides a comprehensive overview of your loc
 This tool is optional and purely diagnostic. It does not affect gameplay. It is intended for users who want to monitor their hardware while running local LLMs alongside RimWorld.
 
 [h2]Support the Project[/h2]
-[url=https://buymeacoffee.com/archdukejim]â˜• Buy me a coffee[/url]
+[url=https://buymeacoffee.com/archdukejim]☕ Buy me a coffee[/url]
     </description>
 </ModMetaData>
 
