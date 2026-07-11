@@ -168,59 +168,84 @@ namespace RimSynapse.NvidiaTool
 
         private static Texture2D GenerateIconForPatch()
         {
-            const int size = 24;
+            string[] gpuMask = new string[]
+            {
+                "                        ",
+                "                        ",
+                "                        ",
+                "                        ",
+                "                        ",
+                "                        ",
+                "    xxxx xxxx   xx  x   ",
+                "   xx  x xx xx  xx  x   ",
+                "   xx    xx  x  xx  x   ",
+                "   xx    xx  x  xx  x   ",
+                "   xx xx xxxx   xx  x   ",
+                "   xx  x xx     xx  x   ",
+                "   xx  x xx     xx  x   ",
+                "    xxxx xx      xxxx   ",
+                "                        ",
+                "                        ",
+                "                        ",
+                "                        ",
+                "                        ",
+                "                        ",
+                "                        ",
+                "                        ",
+                "                        ",
+                "                        "
+            };
+
+            int size = 24;
             var tex = new Texture2D(size, size, TextureFormat.ARGB32, false);
             tex.filterMode = FilterMode.Point;
-
-            var body = new Color32(220, 220, 220, 255);
-            var pins = new Color32(180, 180, 180, 180);
-            var bright = new Color32(255, 255, 255, 255);
-            var clear = new Color32(0, 0, 0, 0);
-
             var pixels = new Color32[size * size];
-            for (int i = 0; i < pixels.Length; i++)
-                pixels[i] = clear;
+            var clear = new Color32(0, 0, 0, 0);
+            var body = new Color32(150, 150, 150, 255);
+            var black = new Color32(0, 0, 0, 255);
 
-            // Chip body
-            for (int y = 8; y < 16; y++)
-                for (int x = 8; x < 16; x++)
-                    pixels[y * size + x] = body;
+            for (int i = 0; i < pixels.Length; i++) pixels[i] = clear;
 
-            // Chip border
-            for (int x = 7; x <= 16; x++)
+            bool[,] isBody = new bool[size, size];
+            for (int y = 0; y < size; y++)
             {
-                pixels[7 * size + x] = body;
-                pixels[16 * size + x] = body;
-            }
-            for (int y = 7; y <= 16; y++)
-            {
-                pixels[y * size + 7] = body;
-                pixels[y * size + 16] = body;
-            }
-
-            // Pins (top, bottom, left, right)
-            for (int i = 0; i < 4; i++)
-            {
-                int px = 8 + i * 2;
-                pixels[6 * size + px] = pins;
-                pixels[5 * size + px] = pins;
-                pixels[17 * size + px] = pins;
-                pixels[18 * size + px] = pins;
-            }
-            for (int i = 0; i < 4; i++)
-            {
-                int py = 8 + i * 2;
-                pixels[py * size + 6] = pins;
-                pixels[py * size + 5] = pins;
-                pixels[py * size + 17] = pins;
-                pixels[py * size + 18] = pins;
+                int texY = size - 1 - y;
+                if (y < gpuMask.Length)
+                {
+                    for (int x = 0; x < size && x < gpuMask[y].Length; x++)
+                    {
+                        if (gpuMask[y][x] != ' ') isBody[x, texY] = true;
+                    }
+                }
             }
 
-            // Center dot
-            pixels[12 * size + 12] = bright;
-            pixels[11 * size + 12] = bright;
-            pixels[12 * size + 11] = bright;
-            pixels[11 * size + 11] = bright;
+            for (int x = 0; x < size; x++)
+            {
+                for (int y = 0; y < size; y++)
+                {
+                    if (isBody[x, y])
+                    {
+                        pixels[y * size + x] = body;
+                    }
+                    else
+                    {
+                        bool nearBody = false;
+                        for (int dx = -1; dx <= 1; dx++)
+                        {
+                            for (int dy = -1; dy <= 1; dy++)
+                            {
+                                int nx = x + dx;
+                                int ny = y + dy;
+                                if (nx >= 0 && nx < size && ny >= 0 && ny < size)
+                                {
+                                    if (isBody[nx, ny]) nearBody = true;
+                                }
+                            }
+                        }
+                        if (nearBody) pixels[y * size + x] = black;
+                    }
+                }
+            }
 
             tex.SetPixels32(pixels);
             tex.Apply(false, true);
