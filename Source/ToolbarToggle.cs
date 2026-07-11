@@ -32,80 +32,94 @@ namespace RimSynapse.NvidiaTool
         /// Generates a 24x24 GPU chip icon in NVIDIA green.
         /// Design: simple chip/processor outline with pin traces.
         /// </summary>
-        private static Texture2D GenerateGpuIcon()
+        private static Texture2D GenerateIconFromMask(string[] mask)
         {
-            const int size = 24;
+            int size = 24;
             var tex = new Texture2D(size, size, TextureFormat.ARGB32, false);
             tex.filterMode = FilterMode.Point;
-
-            // Match RimWorld's toolbar icon style: white/light gray
-            var body = new Color32(220, 220, 220, 255);     // light gray
-            var pins = new Color32(180, 180, 180, 180);     // dimmer gray
-            var clear = new Color32(0, 0, 0, 0);
-
-            // Fill transparent
             var pixels = new Color32[size * size];
-            for (int i = 0; i < pixels.Length; i++)
-                pixels[i] = clear;
+            var clear = new Color32(0, 0, 0, 0);
+            var body = new Color32(150, 150, 150, 255);
+            var black = new Color32(0, 0, 0, 255);
 
-            // Draw chip body (8x8 centered rectangle, offset slightly)
-            int chipX = 8, chipY = 8, chipW = 8, chipH = 8;
-            for (int y = chipY; y < chipY + chipH; y++)
-                for (int x = chipX; x < chipX + chipW; x++)
-                    pixels[y * size + x] = body;
+            for (int i = 0; i < pixels.Length; i++) pixels[i] = clear;
 
-            // Draw chip outline (1px border around the chip)
-            for (int x = chipX - 1; x <= chipX + chipW; x++)
+            bool[,] isBody = new bool[size, size];
+            for (int y = 0; y < size; y++)
             {
-                pixels[(chipY - 1) * size + x] = body;           // top
-                pixels[(chipY + chipH) * size + x] = body;        // bottom
-            }
-            for (int y = chipY - 1; y <= chipY + chipH; y++)
-            {
-                pixels[y * size + (chipX - 1)] = body;            // left
-                pixels[y * size + (chipX + chipW)] = body;         // right
+                int texY = size - 1 - y;
+                if (y < mask.Length)
+                {
+                    for (int x = 0; x < size && x < mask[y].Length; x++)
+                    {
+                        if (mask[y][x] != ' ') isBody[x, texY] = true;
+                    }
+                }
             }
 
-            // Draw pin traces (extending from chip edges)
-            // Top pins
-            for (int i = 0; i < 4; i++)
+            for (int x = 0; x < size; x++)
             {
-                int px = chipX + i * 2;
-                pixels[(chipY - 2) * size + px] = pins;
-                pixels[(chipY - 3) * size + px] = pins;
+                for (int y = 0; y < size; y++)
+                {
+                    if (isBody[x, y])
+                    {
+                        pixels[y * size + x] = body;
+                    }
+                    else
+                    {
+                        bool nearBody = false;
+                        for (int dx = -1; dx <= 1; dx++)
+                        {
+                            for (int dy = -1; dy <= 1; dy++)
+                            {
+                                int nx = x + dx;
+                                int ny = y + dy;
+                                if (nx >= 0 && nx < size && ny >= 0 && ny < size)
+                                {
+                                    if (isBody[nx, ny]) nearBody = true;
+                                }
+                            }
+                        }
+                        if (nearBody) pixels[y * size + x] = black;
+                    }
+                }
             }
-            // Bottom pins
-            for (int i = 0; i < 4; i++)
-            {
-                int px = chipX + i * 2;
-                pixels[(chipY + chipH + 1) * size + px] = pins;
-                pixels[(chipY + chipH + 2) * size + px] = pins;
-            }
-            // Left pins
-            for (int i = 0; i < 4; i++)
-            {
-                int py = chipY + i * 2;
-                pixels[py * size + (chipX - 2)] = pins;
-                pixels[py * size + (chipX - 3)] = pins;
-            }
-            // Right pins
-            for (int i = 0; i < 4; i++)
-            {
-                int py = chipY + i * 2;
-                pixels[py * size + (chipX + chipW + 1)] = pins;
-                pixels[py * size + (chipX + chipW + 2)] = pins;
-            }
-
-            // Small dot in center of chip (the GPU "core")
-            var bright = new Color32(255, 255, 255, 255);
-            pixels[12 * size + 12] = bright;
-            pixels[11 * size + 12] = bright;
-            pixels[12 * size + 11] = bright;
-            pixels[11 * size + 11] = bright;
 
             tex.SetPixels32(pixels);
-            tex.Apply(false, true); // makeNoLongerReadable = true for perf
+            tex.Apply(false, true);
             return tex;
+        }
+
+        private static Texture2D GenerateGpuIcon()
+        {
+            string[] gpuMask = new string[]
+            {
+                "                        ",
+                "                        ",
+                "                        ",
+                "                        ",
+                "                        ",
+                "                        ",
+                "    xxxx xxxx   xx  x   ",
+                "   xx  x xx xx  xx  x   ",
+                "   xx    xx  x  xx  x   ",
+                "   xx    xx  x  xx  x   ",
+                "   xx xx xxxx   xx  x   ",
+                "   xx  x xx     xx  x   ",
+                "   xx  x xx     xx  x   ",
+                "    xxxx xx      xxxx   ",
+                "                        ",
+                "                        ",
+                "                        ",
+                "                        ",
+                "                        ",
+                "                        ",
+                "                        ",
+                "                        ",
+                "                        ",
+                "                        "
+            };
+            return GenerateIconFromMask(gpuMask);
         }
     }
 
