@@ -174,7 +174,7 @@ namespace RimSynapse.NvidiaTool
                 null,
                 null));
 
-            Verse.Log.Warning(
+            RimSynapse.SynapseLogger.Warning(
                 $"[RimSynapse NV] Low VRAM: {freeGb:F1} GB free of {totalGb:F1} GB. " +
                 $"System: {systemGb:F1} GB, LM Studio: {lmsGb:F1} GB.");
         }
