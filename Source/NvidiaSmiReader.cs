@@ -77,7 +77,7 @@ namespace RimSynapse.NvidiaTool
             }
 
             _available = true;
-            Verse.Log.Message($"[RimSynapse NV] NVML initialized. GPU: {GpuName}, Driver: {DriverVersion}");
+            RimSynapse.SynapseLogger.Message($"[RimSynapse NV] NVML initialized. GPU: {GpuName}, Driver: {DriverVersion}");
 
             while (!_shutdown)
             {
@@ -110,7 +110,7 @@ namespace RimSynapse.NvidiaTool
                 if (result != Nvml.SUCCESS)
                 {
                     LastError = $"NVML init failed (code {result}).";
-                    Verse.Log.Warning($"[RimSynapse NV] {LastError}");
+                    RimSynapse.SynapseLogger.Warning($"[RimSynapse NV] {LastError}");
                     return false;
                 }
 
@@ -119,7 +119,7 @@ namespace RimSynapse.NvidiaTool
                 if (result != Nvml.SUCCESS || _device == IntPtr.Zero)
                 {
                     LastError = $"No NVIDIA GPU found (code {result}).";
-                    Verse.Log.Warning($"[RimSynapse NV] {LastError}");
+                    RimSynapse.SynapseLogger.Warning($"[RimSynapse NV] {LastError}");
                     Nvml.Shutdown();
                     return false;
                 }
@@ -138,13 +138,13 @@ namespace RimSynapse.NvidiaTool
             catch (DllNotFoundException)
             {
                 LastError = "nvml.dll not found. NVIDIA drivers may not be installed.";
-                Verse.Log.Warning($"[RimSynapse NV] {LastError}");
+                RimSynapse.SynapseLogger.Warning($"[RimSynapse NV] {LastError}");
                 return false;
             }
             catch (Exception ex)
             {
                 LastError = $"NVML init error: {ex.Message}";
-                Verse.Log.Warning($"[RimSynapse NV] {LastError}");
+                RimSynapse.SynapseLogger.Warning($"[RimSynapse NV] {LastError}");
                 return false;
             }
         }

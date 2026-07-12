@@ -31,7 +31,7 @@ namespace RimSynapse.NvidiaTool
             // Start GPU polling
             NvidiaSmiReader.Start();
 
-            Verse.Log.Message("[RimSynapse NV] RimSynapse NVIDIA Tool loaded.");
+            RimSynapse.SynapseLogger.Message("[RimSynapse NV] RimSynapse NVIDIA Tool loaded.");
         }
 
         public override string SettingsCategory() => "RimSynapse NVIDIA Tool";
@@ -195,7 +195,7 @@ namespace RimSynapse.NvidiaTool
         {
             // Overlay starts off — toolbar toggle icon lets users enable it
             OverlayHud.SetMode(OverlayMode.Off);
-            Verse.Log.Message("[RimSynapse NV] DevTools ready. Use toolbar icon to toggle GPU overlay.");
+            RimSynapse.SynapseLogger.Message("[RimSynapse NV] DevTools ready. Use toolbar icon to toggle GPU overlay.");
         }
     }
 }
