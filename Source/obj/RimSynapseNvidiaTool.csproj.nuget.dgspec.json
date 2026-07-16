@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "D:\\github\\RimSynapse-NVIDIA-Tool\\Source\\RimSynapseNvidiaTool.csproj": {}
+    "d:\\github\\RimSynapse-NVIDIA-Tool\\Source\\RimSynapseNvidiaTool.csproj": {}
   },
   "projects": {
-    "D:\\github\\RimSynapse-NVIDIA-Tool\\Source\\RimSynapseNvidiaTool.csproj": {
+    "d:\\github\\RimSynapse-NVIDIA-Tool\\Source\\RimSynapseNvidiaTool.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\github\\RimSynapse-NVIDIA-Tool\\Source\\RimSynapseNvidiaTool.csproj",
+        "projectUniqueName": "d:\\github\\RimSynapse-NVIDIA-Tool\\Source\\RimSynapseNvidiaTool.csproj",
         "projectName": "RimSynapseNvidiaTool",
-        "projectPath": "D:\\github\\RimSynapse-NVIDIA-Tool\\Source\\RimSynapseNvidiaTool.csproj",
+        "projectPath": "d:\\github\\RimSynapse-NVIDIA-Tool\\Source\\RimSynapseNvidiaTool.csproj",
         "packagesPath": "C:\\Users\\sealt\\.nuget\\packages\\",
-        "outputPath": "D:\\github\\RimSynapse-NVIDIA-Tool\\Source\\obj\\",
+        "outputPath": "d:\\github\\RimSynapse-NVIDIA-Tool\\Source\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\sealt\\AppData\\Roaming\\NuGet\\NuGet.Config"
@@ -50,7 +50,7 @@
               "autoReferenced": true
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.422\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.423\\RuntimeIdentifierGraph.json"
         }
       }
     }
