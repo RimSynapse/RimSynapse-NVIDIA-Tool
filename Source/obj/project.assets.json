@@ -420,11 +420,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "d:\\github\\RimSynapse-NVIDIA-Tool\\Source\\RimSynapseNvidiaTool.csproj",
+      "projectUniqueName": "d:\\github\\rimsynapse\\NVIDIA-Tool\\Source\\RimSynapseNvidiaTool.csproj",
       "projectName": "RimSynapseNvidiaTool",
-      "projectPath": "d:\\github\\RimSynapse-NVIDIA-Tool\\Source\\RimSynapseNvidiaTool.csproj",
+      "projectPath": "d:\\github\\rimsynapse\\NVIDIA-Tool\\Source\\RimSynapseNvidiaTool.csproj",
       "packagesPath": "C:\\Users\\sealt\\.nuget\\packages\\",
-      "outputPath": "d:\\github\\RimSynapse-NVIDIA-Tool\\Source\\obj\\",
+      "outputPath": "d:\\github\\rimsynapse\\NVIDIA-Tool\\Source\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\sealt\\AppData\\Roaming\\NuGet\\NuGet.Config"

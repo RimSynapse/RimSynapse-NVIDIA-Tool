@@ -1,5 +1,5 @@
 [h1]RimSynapse - NVIDIA Tool[/h1]
-[b]📚 [url=https://github.com/RimSynapse/RimSynapse-NVIDIA-Tool/wiki]Official Wiki and Documentation[/url][/b]
+[b]📚 [url=https://github.com/RimSynapse/NVIDIA-Tool/wiki]Official Wiki and Documentation[/url][/b]
 
 [b]Real-Time GPU Monitoring and LLM Performance Dashboard for RimSynapse.[/b]
 

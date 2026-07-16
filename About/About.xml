@@ -3,7 +3,7 @@
     <name>RimSynapse - NVIDIA Tool</name>
     <author>RimSynapse Team</author>
     <packageId>RimSynapse.NVIDIATool</packageId>
-    <url>https://github.com/RimSynapse/RimSynapse-NVIDIA-Tool</url>
+    <url>https://github.com/RimSynapse/NVIDIA-Tool</url>
     <modVersion>0.3.0</modVersion>
     <supportedVersions>
         <li>1.6</li>
@@ -12,7 +12,7 @@
         <li>
             <packageId>RimSynapse.Core</packageId>
             <displayName>RimSynapse - Core</displayName>
-            <downloadUrl>https://github.com/RimSynapse/RimSynapse-Core/releases/latest</downloadUrl>
+            <downloadUrl>https://github.com/RimSynapse/Core/releases/latest</downloadUrl>
             <steamWorkshopUrl>steam://url/CommunityFilePage/3760829776</steamWorkshopUrl>
         </li>
     </modDependencies>
@@ -21,7 +21,7 @@
     </loadAfter>
     <description>
 RimSynapse - NVIDIA Tool
-Official Wiki and Documentation: https://github.com/RimSynapse/RimSynapse-NVIDIA-Tool/wiki
+Official Wiki and Documentation: https://github.com/RimSynapse/NVIDIA-Tool/wiki
 
 Real-Time GPU Monitoring and LLM Performance Dashboard for RimSynapse.
 
