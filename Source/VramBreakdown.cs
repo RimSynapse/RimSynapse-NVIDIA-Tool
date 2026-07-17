@@ -17,6 +17,8 @@ namespace RimSynapse.NvidiaTool
     {
         private static float _rimworldMb;
         private static float _lmStudioMb;
+        private static float _lmStudioVramMb;
+        private static float _lmStudioRamMb;
         private static float _systemMb;
         private static DateTime _lastUpdate = DateTime.MinValue;
         private const float UpdateIntervalSec = 3f;
@@ -25,6 +27,8 @@ namespace RimSynapse.NvidiaTool
 
         internal static float RimWorldMb => _rimworldMb;
         internal static float LmStudioMb => _lmStudioMb;
+        internal static float LmStudioVramMb => _lmStudioVramMb;
+        internal static float LmStudioRamMb => _lmStudioRamMb;
         internal static float SystemMb => _systemMb;
 
         /// <summary>
@@ -45,8 +49,27 @@ namespace RimSynapse.NvidiaTool
             // 2. LM Studio — estimate from loaded model parameters
             _lmStudioMb = EstimateLmStudioVramMb();
 
-            // 3. System — everything else
-            _systemMb = totalUsedMb - _rimworldMb - _lmStudioMb;
+            // 3. Split LM Studio into VRAM vs offloaded RAM based on what's physically possible
+            float maxAvailableForLms = totalUsedMb - _rimworldMb;
+            if (maxAvailableForLms < 0f) maxAvailableForLms = 0f;
+
+            // Estimate System base overhead (e.g. max 1 GB or whatever is left)
+            float systemEstimate = Math.Min(1024f, maxAvailableForLms);
+            float lmsVramLimit = maxAvailableForLms - systemEstimate;
+            if (lmsVramLimit < 0f) lmsVramLimit = 0f;
+
+            if (_lmStudioMb > lmsVramLimit)
+            {
+                _lmStudioVramMb = lmsVramLimit;
+                _lmStudioRamMb = _lmStudioMb - lmsVramLimit;
+            }
+            else
+            {
+                _lmStudioVramMb = _lmStudioMb;
+                _lmStudioRamMb = 0f;
+            }
+
+            _systemMb = totalUsedMb - _rimworldMb - _lmStudioVramMb;
             if (_systemMb < 0f) _systemMb = 0f;
         }
 

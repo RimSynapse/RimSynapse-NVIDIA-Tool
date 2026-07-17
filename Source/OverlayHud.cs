@@ -186,7 +186,7 @@ namespace RimSynapse.NvidiaTool
                 DrawProcessRow(x, ref y, contentWidth, "RimWorld",
                     VramBreakdown.RimWorldMb, totalUsedMb, NvidiaSmiReader.TotalVramMb);
                 DrawProcessRow(x, ref y, contentWidth, "LM Studio",
-                    VramBreakdown.LmStudioMb, totalUsedMb, NvidiaSmiReader.TotalVramMb);
+                    VramBreakdown.LmStudioVramMb, totalUsedMb, NvidiaSmiReader.TotalVramMb, VramBreakdown.LmStudioRamMb);
             }
 
             // ── Advanced section (shown in Advanced + Developer) ──
@@ -217,8 +217,8 @@ namespace RimSynapse.NvidiaTool
                 string ctxText = "—";
                 try
                 {
-                    var gpu = SynapseClient.Gpu;
-                    ctxText = "8192 tok";
+                    int ctxLimit = SynapseClient.ActiveModelContextLength ?? (RimSynapseMod.Instance?.Settings?.modelContextLimit ?? 8192);
+                    ctxText = $"{ctxLimit} tok";
                 }
                 catch { }
                 DrawRow(x, ref y, contentWidth, "Context", ctxText, TextValue);

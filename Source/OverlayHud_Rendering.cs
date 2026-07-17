@@ -37,7 +37,7 @@ namespace RimSynapse.NvidiaTool
         }
 
         private static void DrawProcessRow(float x, ref float y, float width,
-            string name, float usedMb, float totalUsedMb, float totalMb)
+            string name, float usedMb, float totalUsedMb, float totalMb, float offloadedRamMb = 0f)
         {
             if (usedMb <= 0f)
             {
@@ -71,9 +71,16 @@ namespace RimSynapse.NvidiaTool
             float col2 = width * 0.22f;
             float col3 = width * 0.38f;
 
+            string gbStr = $"{gb:F1} GB";
+            if (offloadedRamMb > 50f)
+            {
+                float ramGb = offloadedRamMb / 1024f;
+                gbStr = $"{gb:F1} + {ramGb:F1}G RAM";
+            }
+
             GUI.Label(new Rect(x, y, col1, RowHeight), name, labelStyle);
             GUI.Label(new Rect(x + col1, y, col2, RowHeight), $"{pct:F0}%", pctStyle);
-            GUI.Label(new Rect(x + col1 + col2, y, col3, RowHeight), $"{gb:F1} GB", gbStyle);
+            GUI.Label(new Rect(x + col1 + col2, y, col3, RowHeight), gbStr, gbStyle);
             y += RowHeight;
         }
 
