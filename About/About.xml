@@ -4,7 +4,7 @@
     <author>RimSynapse Team</author>
     <packageId>RimSynapse.NVIDIATool</packageId>
     <url>https://github.com/RimSynapse/NVIDIA-Tool</url>
-    <modVersion>0.3.0</modVersion>
+    <modVersion>0.5.0</modVersion>
     <supportedVersions>
         <li>1.6</li>
     </supportedVersions>
