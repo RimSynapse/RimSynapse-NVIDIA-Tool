@@ -15,6 +15,6 @@
         <!-- Harmony Steam Workshop ID: 2009463077 -->
         <HarmonyPath>$(SteamWorkshopPath)\2009463077\Current\Assemblies</HarmonyPath>
         <!-- RimSynapse Core — built locally -->
-        <RimSynapseCoreAssembly>..\..\RimSynapse-Core\Assemblies</RimSynapseCoreAssembly>
+        <RimSynapseCoreAssembly>..\..\Core\Assemblies</RimSynapseCoreAssembly>
     </PropertyGroup>
 </Project>

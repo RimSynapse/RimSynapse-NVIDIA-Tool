@@ -3,3 +3,8 @@ D:\github\RimSynapse-NVIDIA-Tool\Source\obj\Debug\RimSynapseNvidiaTool.Generated
 D:\github\RimSynapse-NVIDIA-Tool\Source\obj\Debug\RimSynapseNvidiaTool.csproj.CoreCompileInputs.cache
 D:\github\RimSynapse-NVIDIA-Tool\Assemblies\RimSynapseNvidiaTool.dll
 D:\github\RimSynapse-NVIDIA-Tool\Source\obj\Debug\RimSynapseNvidiaTool.dll
+d:\github\rimsynapse\NVIDIA-Tool\Assemblies\RimSynapseNvidiaTool.dll
+d:\github\rimsynapse\NVIDIA-Tool\Source\obj\Debug\RimSynapseNvidiaTool.csproj.AssemblyReference.cache
+d:\github\rimsynapse\NVIDIA-Tool\Source\obj\Debug\RimSynapseNvidiaTool.GeneratedMSBuildEditorConfig.editorconfig
+d:\github\rimsynapse\NVIDIA-Tool\Source\obj\Debug\RimSynapseNvidiaTool.csproj.CoreCompileInputs.cache
+d:\github\rimsynapse\NVIDIA-Tool\Source\obj\Debug\RimSynapseNvidiaTool.dll
