@@ -16,9 +16,9 @@ A crucial diagnostic tool for developers and power-users running local LLMs alon
 
 ---
 
-[h2]Changelog (v0.5.0)[/h2]
+[h2]Changelog (v0.5.1)[/h2]
 [list]
-[*] [b]Performance Tweaks:[/b] Support for Core v0.5.0 capabilities and multi-provider balancing context.
+[*] [b]Playtest Improvements:[/b] General stability enhancements and compatibility optimizations for playtesting.
 [/list]
 
 ---
