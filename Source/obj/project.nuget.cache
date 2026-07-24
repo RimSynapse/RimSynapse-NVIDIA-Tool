@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "qzJYQcWr9vQ=",
+  "dgSpecHash": "SxeH+yRi6xE=",
   "success": true,
-  "projectFilePath": "d:\\github\\rimsynapse\\NVIDIA-Tool\\Source\\RimSynapseNvidiaTool.csproj",
+  "projectFilePath": "D:\\github\\rimsynapse\\NVIDIA-Tool\\Source\\RimSynapseNvidiaTool.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\sealt\\.nuget\\packages\\microsoft.netframework.referenceassemblies\\1.0.3\\microsoft.netframework.referenceassemblies.1.0.3.nupkg.sha512",
     "C:\\Users\\sealt\\.nuget\\packages\\microsoft.netframework.referenceassemblies.net472\\1.0.3\\microsoft.netframework.referenceassemblies.net472.1.0.3.nupkg.sha512"

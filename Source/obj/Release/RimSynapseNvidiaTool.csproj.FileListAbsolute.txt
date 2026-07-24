@@ -1,0 +1,5 @@
+D:\github\rimsynapse\NVIDIA-Tool\Assemblies\RimSynapseNvidiaTool.dll
+D:\github\rimsynapse\NVIDIA-Tool\Source\obj\Release\RimSynapseNvidiaTool.csproj.AssemblyReference.cache
+D:\github\rimsynapse\NVIDIA-Tool\Source\obj\Release\RimSynapseNvidiaTool.GeneratedMSBuildEditorConfig.editorconfig
+D:\github\rimsynapse\NVIDIA-Tool\Source\obj\Release\RimSynapseNvidiaTool.csproj.CoreCompileInputs.cache
+D:\github\rimsynapse\NVIDIA-Tool\Source\obj\Release\RimSynapseNvidiaTool.dll
